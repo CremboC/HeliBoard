@@ -9,11 +9,11 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2"
     tools:ignore="MissingTranslation">
     <!-- Name of Android spell checker service. The app name should not be translated. -->
-    <string name="spell_checker_service_name">HeliBoard Spell Checker</string>
+    <string name="spell_checker_service_name">Varnelė Klaviatūra Spell Checker</string>
     <!-- Title for IME settings screen. The app name should not be translated. -->
-    <string name="ime_settings">HeliBoard Settings</string>
+    <string name="ime_settings">Varnelė Klaviatūra Settings</string>
     <!-- Title for the spell checking service settings screen. The app name should not be translated. -->
-    <string name="android_spell_checker_settings">HeliBoard Spell Checker Settings</string>
+    <string name="android_spell_checker_settings">Varnelė Klaviatūra Spell Checker Settings</string>
     <!-- Option to provide vibrate/haptic feedback on keypress -->
     <string name="vibrate_on_keypress">Vibrate on keypress</string>
     <!-- Option to provide vibrate/haptic feedback on keypress even in do not disturb mode -->
@@ -807,6 +807,10 @@ New dictionary:
     <string name="version">Version</string>
     <!-- github repo link for about screen -->
     <string name="about_github_link">View on GitHub</string>
+    <!-- Title of the credits entry in the About screen -->
+    <string name="about_credits">Credits</string>
+    <!-- Credits for the projects this keyboard is built on -->
+    <string name="about_credits_text" translatable="false">Varnelė Klaviatūra is a fork of HeliBoard by Helium314 and the HeliBoard contributors, itself based on OpenBoard, the AOSP Keyboard (Apache 2.0) and LineageOS. Icon by Fabian OvrWrt with contributions from The Eclectic Dyslexic (CC BY-SA 4.0). Lithuanian checking by Varnelė, using the ispell-lt word list (BSD). Tap to open HeliBoard.</string>
     <!-- link to the wiki for about screen -->
     <string name="about_wiki_link">Go to Wiki</string>
     <!-- description for wiki link -->

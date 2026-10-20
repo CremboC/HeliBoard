@@ -53,6 +53,7 @@ fun AboutScreen(
 ) {
     val items = listOf(
         SettingsWithoutKey.APP,
+        SettingsWithoutKey.CREDITS,
         SettingsWithoutKey.VERSION,
         SettingsWithoutKey.LICENSE,
         SettingsWithoutKey.HIDDEN_FEATURES,
@@ -75,6 +76,20 @@ fun createAboutSettings(context: Context) = listOf(
             description = it.description,
             onClick = { },
             icon = R.mipmap.ic_launcher_round
+        )
+    },
+    Setting(context, SettingsWithoutKey.CREDITS, R.string.about_credits, R.string.about_credits_text) {
+        val ctx = LocalContext.current
+        Preference(
+            name = it.title,
+            description = it.description,
+            onClick = {
+                val intent = Intent()
+                intent.data = Links.GITHUB.toUri()
+                intent.action = Intent.ACTION_VIEW
+                ctx.startActivity(intent)
+            },
+            icon = R.drawable.ic_settings_about_github
         )
     },
     Setting(context, SettingsWithoutKey.VERSION, R.string.version) {
@@ -168,7 +183,7 @@ fun createAboutSettings(context: Context) = listOf(
             description = it.description,
             onClick = {
                 val intent = Intent()
-                intent.data = Links.GITHUB.toUri()
+                intent.data = Links.FORK.toUri()
                 intent.action = Intent.ACTION_VIEW
                 ctx.startActivity(intent)
             },

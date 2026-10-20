@@ -1,3 +1,32 @@
+# Varnelė Klaviatūra
+
+A Lithuanian keyboard for Android that corrects as you type: missing diacritics
+(`maciau` → `mačiau`), grammar the next words reveal (`prieš pora dienų` → `porą`,
+`visu žodžių` → `visų`), typos and missing commas. The checking is done by
+[Varnelė](https://github.com/CremboC/varnele), a rule-based Lithuanian checker written in
+Rust and built into the app. Lithuanian is enabled by default.
+
+## Credits
+
+Varnelė Klaviatūra is a fork of **[HeliBoard](https://github.com/HeliBorg/HeliBoard)** by
+Helium314 and the HeliBoard contributors. Nearly all of this keyboard is their work; the
+fork adds the Varnelė dictionary, a sentence fixer and a few settings (see the
+`varnele` branch history). HeliBoard itself builds on
+[OpenBoard](https://github.com/openboard-team/openboard), the
+[AOSP Keyboard](https://android.googlesource.com/platform/packages/inputmethods/LatinIME/)
+and [LineageOS](https://review.lineageos.org/admin/repos/LineageOS/android_packages_inputmethods_LatinIME).
+The icon is by [Fabian OvrWrt](https://github.com/FabianOvrWrt) with contributions from
+[The Eclectic Dyslexic](https://github.com/the-eclectic-dyslexic) (CC BY-SA 4.0).
+Varnelė's Lithuanian lexicon comes from [ispell-lt](https://github.com/ispell-lt/ispell-lt) (BSD).
+
+Licensed like HeliBoard under the GNU General Public License v3.0 (see [LICENSE](LICENSE));
+AOSP-derived code is also under [Apache 2.0](LICENSE-Apache-2.0). Please report problems
+with this fork here, not to HeliBoard.
+
+The original HeliBoard README follows.
+
+---
+
 # HeliBoard
 HeliBoard is a privacy-conscious and customizable open-source keyboard, based on AOSP / OpenBoard.
 Does not use internet permission, and thus is 100% offline.

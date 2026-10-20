@@ -1,5 +1,8 @@
-This is a local fork of HeliBoard with Varnelė (rule-based Lithuanian checker)
-built in. The project notes, rules, numbers and backlog live in the varnele repo:
+This is Varnelė Klaviatūra, a fork of HeliBoard with Varnelė (rule-based Lithuanian
+checker) built in. App ID dev.imbrasas.varnele.keyboard (.debug for debug builds); APK
+app/build/outputs/apk/debug/VarneleKlaviatura_<version>-debug.apk. Internal Java/Kotlin
+packages stay helium314.keyboard.*. Lithuanian is enabled by default
+(SubtypeSettings.getDefaultEnabledSubtypes); credits in README.md and the About screen. The project notes, rules, numbers and backlog live in the varnele repo:
 
 @../varnele/AGENTS.md
 

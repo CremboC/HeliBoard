@@ -218,7 +218,9 @@ object SubtypeSettings {
     @Suppress("SameReturnValue")
     private fun getDefaultEnabledSubtypes(): List<InputMethodSubtype> {
         if (systemSubtypes.isNotEmpty()) return systemSubtypes
-        val subtypes = systemLocales.mapNotNull { locale ->
+        // Varnelė Klaviatūra: Lithuanian first, then the system languages
+        val locales = (listOf(Locale.forLanguageTag("lt")) + systemLocales).distinctBy { it.language }
+        val subtypes = locales.mapNotNull { locale ->
             val subtypesOfLocale = resourceSubtypesByLocale[locale]
             // get best match
                 ?: LocaleUtils.getBestMatch(locale, resourceSubtypesByLocale.keys) {it}?.let { resourceSubtypesByLocale[it] }

@@ -22,6 +22,8 @@ object Native {
         val suggestions: List<Candidate>,
         val contextRule: String,
         val contextFixes: List<Candidate>,
+        /** the first suggestions come from the whole-word key-shift search (fofrkua -> didelis) */
+        val keyShift: Boolean,
     ) {
         val isValid get() = status != "unknown"
     }
@@ -39,7 +41,7 @@ object Native {
     private external fun warmUpNative()
 
     @JvmStatic
-    private external fun word(word: String, context: String): String
+    private external fun word(word: String, context: String, keyShift: Boolean): String
 
     @JvmStatic
     private external fun check(text: String, formal: Boolean): String
@@ -67,9 +69,9 @@ object Native {
     }
 
     /** The word being typed, with the previous words of the sentence as context. */
-    fun check(word: String, context: String = ""): WordResult? {
+    fun check(word: String, context: String = "", keyShift: Boolean = false): WordResult? {
         if (!available) return null
-        val o = JSONObject(word(word, context))
+        val o = JSONObject(word(word, context, keyShift))
         fun list(a: JSONArray) = (0 until a.length()).map {
             val c = a.getJSONObject(it)
             Candidate(c.getString("w"), c.getDouble("cost"), c.getDouble("fcost"))
@@ -77,6 +79,7 @@ object Native {
         return WordResult(
             o.getString("status"), list(o.getJSONArray("suggestions")),
             o.getString("contextRule"), list(o.getJSONArray("contextFixes")),
+            o.optBoolean("keyShift", false),
         )
     }
 }

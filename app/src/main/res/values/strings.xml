@@ -148,6 +148,9 @@
     <string name="auto_correct_shortcuts">Auto-correct shortcuts</string>
     <!-- Description for auto_correct_shortcuts -->
     <string name="auto_correct_shortcuts_summary">When enabled shortcuts might be expanded by autocorrect</string>
+    <!-- Varnelė (Lithuanian) -->
+    <string name="varnele_key_shift">Fix whole-word key slips (Lithuanian)</string>
+    <string name="varnele_key_shift_summary">If a word is not recognised at all, try neighbouring keys for every letter (fofrkua → didelis)</string>
     <!-- Option to enable auto correction for for capitalized suggestions (by pressing shift) -->
     <string name="auto_correct_capitalized_suggestions">Auto-correct capitalized suggestions</string>
     <!-- Description for auto_correct_capitalized_suggestions -->

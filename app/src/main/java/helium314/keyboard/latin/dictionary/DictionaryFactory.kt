@@ -7,6 +7,9 @@ package helium314.keyboard.latin.dictionary
 
 import android.content.Context
 import helium314.keyboard.latin.common.LocaleUtils
+import helium314.keyboard.latin.settings.Defaults
+import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.latin.utils.prefs
 import helium314.keyboard.latin.utils.DictionaryInfoUtils
 import helium314.keyboard.latin.utils.Log
 import java.io.File
@@ -32,7 +35,9 @@ object DictionaryFactory {
     fun getMainDictsForLocale(context: Context, locale: Locale, useEmojiDict: Boolean): List<Dictionary> {
         val dictList = LinkedList<Dictionary>()
         // Lithuanian: Varnelė knows every inflected form; word-list dictionaries (if any) stay for gestures
-        if (VarneleDictionary.isAvailable(locale)) dictList.add(VarneleDictionary(locale))
+        if (VarneleDictionary.isAvailable(locale)) dictList.add(VarneleDictionary(locale) {
+            context.prefs().getBoolean(Settings.PREF_VARNELE_KEY_SHIFT, Defaults.PREF_VARNELE_KEY_SHIFT)
+        })
         val (extracted, nonExtracted) = getAvailableDictsForLocale(locale, context, useEmojiDict)
         extracted.sortedBy { !it.name.endsWith(DictionaryInfoUtils.USER_DICTIONARY_SUFFIX) }.forEach {
             // we sort to have user dicts first, so they have priority over internal dicts of the same type

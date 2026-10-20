@@ -65,6 +65,7 @@ fun TextCorrectionScreen(
         Settings.PREF_AUTO_CORRECTION,
         if (autocorrectEnabled) Settings.PREF_MORE_AUTO_CORRECTION else null,
         if (autocorrectEnabled) Settings.PREF_AUTOCORRECT_SHORTCUTS else null,
+        if (autocorrectEnabled) Settings.PREF_VARNELE_KEY_SHIFT else null,
         if (autocorrectEnabled) Settings.PREF_AUTOCORRECT_CAPITALIZED_SUGGESTION else null,
         if (autocorrectEnabled) Settings.PREF_AUTO_CORRECT_CONFIDENCE else null,
         if (autocorrectEnabled) Settings.PREF_BACKSPACE_REVERTS_AUTOCORRECT else null,
@@ -125,6 +126,11 @@ fun createCorrectionSettings(context: Context) = listOf(
         R.string.more_autocorrect, R.string.more_autocorrect_summary
     ) {
         SwitchPreference(it, Defaults.PREF_MORE_AUTO_CORRECTION)
+    },
+    Setting(context, Settings.PREF_VARNELE_KEY_SHIFT,
+        R.string.varnele_key_shift, R.string.varnele_key_shift_summary
+    ) {
+        SwitchPreference(it, Defaults.PREF_VARNELE_KEY_SHIFT)
     },
     Setting(context, Settings.PREF_AUTOCORRECT_SHORTCUTS,
         R.string.auto_correct_shortcuts, R.string.auto_correct_shortcuts_summary

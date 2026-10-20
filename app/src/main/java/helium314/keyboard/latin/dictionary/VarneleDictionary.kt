@@ -24,7 +24,11 @@ import java.util.Locale
  * Fixes that only add diacritics and are clearly the best guess are marked
  * whitelisted, which makes them autocorrect regardless of the threshold.
  */
-class VarneleDictionary(locale: Locale) : Dictionary(TYPE_MAIN, locale) {
+class VarneleDictionary(
+    locale: Locale,
+    /** setting: try neighbouring keys for every letter of a completely unrecognised word */
+    private val keyShiftEnabled: () -> Boolean = { false },
+) : Dictionary(TYPE_MAIN, locale) {
 
     private val validCache = LruCache<String, Boolean>(2000)
 
@@ -52,7 +56,7 @@ class VarneleDictionary(locale: Locale) : Dictionary(TYPE_MAIN, locale) {
         if (composedData.mIsBatchMode || typed.isEmpty()) return out
         val context = previousWords(ngramContext)
         val t = System.nanoTime()
-        val r = Native.check(typed, context) ?: return out
+        val r = Native.check(typed, context, keyShiftEnabled()) ?: return out
         validCache.put(typed, r.isValid)
         if (BuildConfig.DEBUG) Log.d(TAG, "'$context' + '$typed': ${r.status} " +
             "fix=${r.contextFixes.map { it.word }} sugg=${r.suggestions.take(3).map { it.word }} " +
@@ -71,17 +75,26 @@ class VarneleDictionary(locale: Locale) : Dictionary(TYPE_MAIN, locale) {
         }
 
         val s = r.suggestions
+        var previous = Int.MAX_VALUE
         s.forEachIndexed { i, c ->
             // context (a grammar rule) already chose the order, or the top one clearly wins
             val clearlyBest = i == 0 && (r.contextRule == "context" || s.size == 1 || s[1].cost - c.cost >= CLEAR_MARGIN)
+            // whole-word key slip: the user enabled it and nothing else matched, so the most
+            // likely word is applied; the other guesses stay in the strip
+            val keySlipGuess = r.keyShift && i == 0
             val kind = when {
+                keySlipGuess ->
+                    SuggestedWordInfo.KIND_CORRECTION or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION
                 clearlyBest && c.diacriticOnly -> AUTOCORRECT_KIND
                 // missing diacritics are free: zodzou -> žodžių is one typo, not four edits
                 c.typoCost <= MAX_AUTOCORRECT_TYPOS ->
                     SuggestedWordInfo.KIND_CORRECTION or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION
                 else -> SuggestedWordInfo.KIND_CORRECTION
             }
-            out.add(info(c.word, score(c.cost) - i, kind))
+            // keep the strip in Varnelė's order: each score strictly below the previous one
+            val sc = minOf(if (keySlipGuess) KEY_SLIP_SCORE else score(typed, c), previous - 1).coerceAtLeast(1)
+            previous = sc
+            out.add(info(c.word, sc, kind))
         }
         return out
     }
@@ -113,8 +126,38 @@ class VarneleDictionary(locale: Locale) : Dictionary(TYPE_MAIN, locale) {
         word, "", score, kind, this, SuggestedWordInfo.NOT_AN_INDEX, SuggestedWordInfo.NOT_A_CONFIDENCE,
     )
 
-    /** Varnelė's cost (lower is better, ~0.1 for a missing diacritic, ~1 per typo) to HeliBoard's score. */
-    private fun score(cost: Double): Int = ((2.0 - cost) * 700_000).toInt().coerceIn(1, 1_400_000)
+    /**
+     * HeliBoard autocorrects when score / 1,000,000 * (1 - editDistance / length) passes the
+     * user's threshold, counting every changed letter, diacritics included: zodzou -> žodžių
+     * is 4 edits in 6 letters and would never pass. So aim for a normalized value based on
+     * Varnelė's diacritic-free typo cost and divide by HeliBoard's own weight; the user's
+     * autocorrect strength setting still decides.
+     */
+    private fun score(typed: String, c: Native.Candidate): Int {
+        val target = when {
+            c.diacriticOnly -> 1.0
+            c.typoCost <= MAX_AUTOCORRECT_TYPOS -> 0.9 - 0.4 * c.typoCost   // one typo: ~0.5
+            else -> 0.05                                                     // shown, not applied
+        }
+        val weight = 1.0 - editDistance(typed.lowercase(), c.word.lowercase()).toDouble() / c.word.length
+        if (weight <= 0.0) return if (c.diacriticOnly) WHITELIST_FLOOR else 1
+        return (target * 1_000_000 / weight).coerceIn(1.0, 1_900_000_000.0).toInt()
+            .let { if (c.diacriticOnly) maxOf(it, WHITELIST_FLOOR) else it }
+    }
+
+    /** Plain Levenshtein distance, as HeliBoard's native calcNormalizedScore uses. */
+    private fun editDistance(a: String, b: String): Int {
+        var prev = IntArray(b.length + 1) { it }
+        for (i in 1..a.length) {
+            val cur = IntArray(b.length + 1)
+            cur[0] = i
+            for (j in 1..b.length) {
+                cur[j] = minOf(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + if (a[i - 1] == b[j - 1]) 0 else 1)
+            }
+            prev = cur
+        }
+        return prev[b.length]
+    }
 
     companion object {
         private const val TAG = "Varnele"
@@ -122,6 +165,9 @@ class VarneleDictionary(locale: Locale) : Dictionary(TYPE_MAIN, locale) {
         private const val CONTEXT_FIX_SCORE = 1_300_000   // above the typed word: autocorrects
         private const val CONTEXT_HINT_SCORE = 1_100_000  // below it: shown, not applied
         private const val CLEAR_MARGIN = 0.08
+        private const val WHITELIST_FLOOR = 1_300_000
+        // every letter differs, so HeliBoard's distance weight is tiny: needs a large raw score
+        private const val KEY_SLIP_SCORE = 1_900_000_000
         private const val MAX_AUTOCORRECT_TYPOS = 1.0
         private const val AUTOCORRECT_KIND =
             SuggestedWordInfo.KIND_WHITELIST or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION

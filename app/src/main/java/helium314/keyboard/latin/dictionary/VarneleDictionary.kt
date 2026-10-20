@@ -177,11 +177,12 @@ class VarneleDictionary(
         /**
          * A context fix of a valid word that is applied without asking: one that only changes
          * diacritics, or the subject rule's verb form right after a personal pronoun
-         * (aš buvo -> buvau), which is almost never intended.
+         * (aš buvo -> buvau), which is almost never intended, or a never-seen short word one
+         * key from a common one (kak -> kai).
          */
         private fun isSure(r: Native.WordResult, i: Int): Boolean {
             val c = r.contextFixes.getOrNull(i) ?: return false
-            return c.diacriticOnly || (r.contextRule == "subject" && i == 0)
+            return c.diacriticOnly || (i == 0 && (r.contextRule == "subject" || r.contextRule == "rare"))
         }
 
         /** context (a grammar rule) already chose the order, or the top suggestion clearly wins */

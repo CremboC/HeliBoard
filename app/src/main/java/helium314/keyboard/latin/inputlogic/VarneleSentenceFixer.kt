@@ -92,7 +92,7 @@ object VarneleSentenceFixer {
         if (word[0].isUpperCase()) fix = fix.replaceFirstChar { it.uppercaseChar() }
         if (fix == word) return sentence
         // a diacritic fix keeps the letters; only the subject rule may change them (aš buvo -> buvau)
-        if (r.contextRule != "subject" && (fix.length != word.length || fold(fix) != fold(word))) return sentence
+        if (r.contextRule != "subject" && r.contextRule != "rare" && (fix.length != word.length || fold(fix) != fold(word))) return sentence
         return sentence.substring(0, start) + fix + sentence.substring(end)
     }
 

@@ -10,4 +10,6 @@ Fork-specific files (everything else is upstream HeliBoard):
 - hooks: DictionaryFactory.getMainDictsForLocale, InputLogic.handleSeparatorEvent (end)
 - app/build.gradle.kts: exportVarneleData + cargoBuildVarnele tasks; proguard keep rule
 
+Remotes: `origin` = upstream Helium314/HeliBoard (pull only, never push); `fork` =
+github.com/CremboC/HeliBoard, branch `varnele` (push here).
 HeliBoard's AI_USAGE.md prohibits AI-generated upstream PRs: keep this work in the fork.

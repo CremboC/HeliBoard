@@ -50,7 +50,9 @@ object VarneleSentenceFixer {
             for (f in Native.findings(fixed).sortedByDescending { it.start }) {
                 if (f.end > fixed.length) continue
                 if (f.rule == "comma") {
-                    if (f.start >= 2 && fixed[f.start - 1] == ' ' && fixed[f.start - 2].isLetter()) {
+                    // wait for the next word: "pirk bet" may become "pirk bet ką" (no comma)
+                    val nextWordTyped = (f.end until fixed.length).any { fixed[it].isLetter() }
+                    if (nextWordTyped && f.start >= 2 && fixed[f.start - 1] == ' ' && fixed[f.start - 2].isLetter()) {
                         sb.insert(f.start - 1, ',')
                         changed = true
                     }

@@ -1,0 +1,109 @@
+name: Varnelė release build
+# Signed Google Play bundle (.aab) and universal APK from the `nouserlib` build type,
+# which cannot load a user-supplied native library (Play forbids code from outside the app).
+# versionCode = 10000 + run number (see app/build.gradle.kts).
+# Secrets: VARNELE_KEYSTORE_BASE64, VARNELE_KEYSTORE_PASSWORD, VARNELE_KEY_ALIAS, VARNELE_KEY_PASSWORD
+
+on:
+  push:
+    branches: [ varnele ]
+  workflow_dispatch:
+
+concurrency:
+  group: varnele-release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NDK_VERSION: 28.0.13004108 # keep equal to android.ndkVersion in app/build.gradle.kts
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: HeliBoard
+
+      - name: Check out Varnelė
+        uses: actions/checkout@v4
+        with:
+          repository: CremboC/varnele
+          ref: main
+          path: varnele
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Rust for Android
+        run: |
+          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+          cargo install cargo-ndk --locked
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: varnele/rust
+
+      - name: Install NDK
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;$NDK_VERSION" > /dev/null
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode keystore
+        env:
+          VARNELE_KEYSTORE_BASE64: ${{ secrets.VARNELE_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$VARNELE_KEYSTORE_BASE64" || { echo "::error::VARNELE_KEYSTORE_BASE64 secret is missing"; exit 1; }
+          echo "$VARNELE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+
+      - name: Build signed AAB and APK
+        working-directory: HeliBoard
+        env:
+          VARNELE_KEYSTORE_FILE: ${{ runner.temp }}/upload.jks
+          VARNELE_KEYSTORE_PASSWORD: ${{ secrets.VARNELE_KEYSTORE_PASSWORD }}
+          VARNELE_KEY_ALIAS: ${{ secrets.VARNELE_KEY_ALIAS }}
+          VARNELE_KEY_PASSWORD: ${{ secrets.VARNELE_KEY_PASSWORD }}
+        run: |
+          export VERSION_CODE=$((10000 + GITHUB_RUN_NUMBER))
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          chmod +x gradlew
+          ./gradlew bundleNouserlib assembleNouserlib
+
+      - name: Verify signatures
+        working-directory: HeliBoard/app/build/outputs
+        run: |
+          jarsigner -verify bundle/nouserlib/*.aab | tail -1
+          "$ANDROID_HOME"/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner verify --print-certs apk/nouserlib/*.apk | head -3
+          unzip -l apk/nouserlib/*.apk | grep libvarnele_android.so
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: VarneleKlaviatura-${{ env.VERSION_CODE }}-aab
+          path: HeliBoard/app/build/outputs/bundle/nouserlib/*.aab
+          if-no-files-found: error
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VarneleKlaviatura-${{ env.VERSION_CODE }}-apk
+          path: HeliBoard/app/build/outputs/apk/nouserlib/*.apk
+          if-no-files-found: error
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+
+      - name: Archive reports for failed job
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: 'HeliBoard/*/build/reports'
+        if: ${{ failure() }}

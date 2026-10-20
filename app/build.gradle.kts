@@ -13,8 +13,11 @@ android {
         applicationId = "dev.imbrasas.varnele.keyboard"
         minSdk = 21
         targetSdk = 37
-        versionCode = 4300
-        versionName = "4.3-beta1"
+        // Our own version (not upstream's 4.3-beta1 / 4300). versionCode = 10000 + CI run number
+        // (set by .github/workflows/varnele-release.yml as VERSION_CODE), 10000 for local builds.
+        // It must stay above upstream's codes: AppUpgrade runs every `oldVersion <= N` migration.
+        versionCode = System.getenv("VERSION_CODE")?.toInt() ?: 10000
+        versionName = "1.0"
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -22,14 +25,28 @@ android {
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
 
+    // Upload key for Google Play, from the environment (GitHub Actions secrets on the fork).
+    // Without VARNELE_KEYSTORE_FILE release/nouserlib builds are unsigned, as upstream.
+    val releaseSigning = System.getenv("VARNELE_KEYSTORE_FILE")?.let { path ->
+        signingConfigs.create("release") {
+            storeFile = file(path)
+            storePassword = System.getenv("VARNELE_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("VARNELE_KEY_ALIAS")
+            keyPassword = System.getenv("VARNELE_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = releaseSigning
             isMinifyEnabled = true
             isShrinkResources = false
             isDebuggable = false
             isJniDebuggable = false
         }
         create("nouserlib") { // same as release, but does not allow the user to provide a library
+            // this is the Google Play build: Play forbids loading native code from outside the app
+            signingConfig = releaseSigning
             isMinifyEnabled = true
             isShrinkResources = false
             isDebuggable = false

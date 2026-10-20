@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package helium314.keyboard.latin.dictionary
 
+import android.content.Context
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.SuggestionSpan
 import android.util.Log
 import android.util.LruCache
 import helium314.keyboard.latin.BuildConfig
@@ -173,6 +177,26 @@ class VarneleDictionary(
             SuggestedWordInfo.KIND_WHITELIST or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION
 
         fun isAvailable(locale: Locale) = locale.language == "lt" && Native.available
+
+        /**
+         * A committed word Varnelė does not know gets a misspelled SuggestionSpan, so the text
+         * field draws the red underline and offers the corrections on tap, as Gboard does,
+         * whatever the system spell checker is. Words with digits or punctuation are left alone.
+         */
+        @JvmStatic
+        fun markMisspelled(context: Context, text: CharSequence, locale: Locale): CharSequence {
+            val word = text.toString()
+            if (word.length < 2 || !word.all { it.isLetter() || it == '-' }) return text
+            val r = Native.check(word) ?: return text
+            if (r.isValid) return text
+            val suggestions = r.suggestions.take(SuggestionSpan.SUGGESTIONS_MAX_SIZE).map { it.word }.toTypedArray()
+            // FLAG_MISSPELLED alone: text fields drop a span that also has FLAG_EASY_CORRECT
+            val span = SuggestionSpan(context, locale, suggestions, SuggestionSpan.FLAG_MISSPELLED, null)
+            val out = SpannableString(text)
+            for (old in out.getSpans(0, out.length, SuggestionSpan::class.java)) out.removeSpan(old)
+            out.setSpan(span, 0, out.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            return out
+        }
 
         /**
          * A context fix of a valid word that is applied without asking: one that only changes

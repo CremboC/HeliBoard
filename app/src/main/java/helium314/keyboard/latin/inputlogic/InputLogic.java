@@ -53,6 +53,7 @@ import helium314.keyboard.latin.common.InputPointers;
 import helium314.keyboard.latin.common.StringUtils;
 import helium314.keyboard.latin.common.StringUtilsKt;
 import helium314.keyboard.latin.common.SuggestionSpanUtilsKt;
+import helium314.keyboard.latin.dictionary.VarneleDictionary;
 import helium314.keyboard.latin.define.DebugFlags;
 import helium314.keyboard.latin.settings.Settings;
 import helium314.keyboard.latin.settings.SettingsValues;
@@ -2399,8 +2400,13 @@ public final class InputLogic {
         }
         // essentially reverted https://github.com/lineageos/android_packages_inputmethods_LatinIME/commit/ee6de1466bc98e27bd414c9a7451f2aee3f9e721
         // can't find any drawback (performance, neither when setting nor when reading)
-        final CharSequence chosenWordWithSuggestions = getTextWithSuggestionSpan(mLatinIME, chosenWord,
+        CharSequence chosenWordWithSuggestions = getTextWithSuggestionSpan(mLatinIME, chosenWord,
                 mSuggestedWords, getDictionaryFacilitatorLocale());
+        // Varnelė (Lithuanian): underline a word it does not know, independent of the system spell checker
+        if (VarneleDictionary.Companion.isAvailable(getDictionaryFacilitatorLocale())) {
+            chosenWordWithSuggestions = VarneleDictionary.markMisspelled(mLatinIME, chosenWordWithSuggestions,
+                    getDictionaryFacilitatorLocale());
+        }
         if (DebugFlags.DEBUG_ENABLED) {
             long runTimeMillis = SystemClock.elapsedRealtime() - startTimeMillis;
             Log.d(TAG, "commitChosenWord() : " + runTimeMillis + " ms to run "

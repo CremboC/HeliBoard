@@ -78,7 +78,7 @@ class VarneleDictionary(
         var previous = Int.MAX_VALUE
         s.forEachIndexed { i, c ->
             // context (a grammar rule) already chose the order, or the top one clearly wins
-            val clearlyBest = i == 0 && (r.contextRule == "context" || s.size == 1 || s[1].cost - c.cost >= CLEAR_MARGIN)
+            val clearlyBest = i == 0 && isClearlyBest(r)
             // whole-word key slip: the user enabled it and nothing else matched, so the most
             // likely word is applied; the other guesses stay in the strip
             val keySlipGuess = r.keyShift && i == 0
@@ -173,5 +173,21 @@ class VarneleDictionary(
             SuggestedWordInfo.KIND_WHITELIST or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION
 
         fun isAvailable(locale: Locale) = locale.language == "lt" && Native.available
+
+        /** context (a grammar rule) already chose the order, or the top suggestion clearly wins */
+        private fun isClearlyBest(r: Native.WordResult): Boolean {
+            val s = r.suggestions
+            return s.isNotEmpty() && (r.contextRule == "context" || s.size == 1 || s[1].cost - s[0].cost >= CLEAR_MARGIN)
+        }
+
+        /**
+         * The fix that is safe to apply without asking: only diacritics change, and it is the
+         * dictionary's clear choice (the same ones getSuggestions marks whitelisted). Null if none.
+         */
+        fun confidentFix(r: Native.WordResult): String? = when {
+            r.isValid -> r.contextFixes.firstOrNull()?.takeIf { it.diacriticOnly }?.word
+            isClearlyBest(r) && r.suggestions[0].diacriticOnly && !r.keyShift -> r.suggestions[0].word
+            else -> null
+        }
     }
 }

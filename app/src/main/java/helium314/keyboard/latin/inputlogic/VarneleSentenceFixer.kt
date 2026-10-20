@@ -5,6 +5,7 @@ import android.util.Log
 import dev.imbrasas.varnele.Native
 import helium314.keyboard.latin.BuildConfig
 import helium314.keyboard.latin.RichInputConnection
+import helium314.keyboard.latin.dictionary.VarneleDictionary
 import java.util.Locale
 
 /**
@@ -39,7 +40,9 @@ object VarneleSentenceFixer {
         val sentence = before.substring(start)
         if (sentence.isBlank()) return false
 
-        var fixed = sentence
+        // the word this separator finished, in case the keyboard committed it as typed
+        // (punctuation, or a learned word that outranked the fix): "nauja sakini?" -> "sakinį"
+        var fixed = fixLastWord(sentence)
         // a second pass catches what the first fix reveals: "kuriu" -> "kurių" then needs a comma
         repeat(2) {
             val sb = StringBuilder(fixed)
@@ -72,6 +75,21 @@ object VarneleSentenceFixer {
         connection.commitText(fixed.substring(p), 1)
         connection.endBatchEdit()
         return true
+    }
+
+    private fun fixLastWord(sentence: String): String {
+        var end = sentence.length
+        while (end > 0 && !sentence[end - 1].isLetter()) end--
+        var start = end
+        while (start > 0 && sentence[start - 1].isLetter()) start--
+        if (end - start < 2) return sentence
+        val word = sentence.substring(start, end)
+        val context = sentence.substring(0, start).split(Regex("[^\\p{L}]+")).filter { it.isNotEmpty() }.takeLast(3).joinToString(" ")
+        val r = Native.check(word, context) ?: return sentence
+        var fix = VarneleDictionary.confidentFix(r) ?: return sentence
+        if (word[0].isUpperCase()) fix = fix.replaceFirstChar { it.uppercaseChar() }
+        if (fix == word || fix.length != word.length || fold(fix) != fold(word)) return sentence
+        return sentence.substring(0, start) + fix + sentence.substring(end)
     }
 
     private fun fold(s: String): String = buildString {

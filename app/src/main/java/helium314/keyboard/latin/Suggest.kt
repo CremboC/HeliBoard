@@ -21,6 +21,7 @@ import helium314.keyboard.latin.dictionary.Dictionary
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.settings.SettingsValuesForSuggestion
 import helium314.keyboard.latin.suggestions.SuggestionStripView
+import helium314.keyboard.latin.dictionary.VarneleDictionary
 import helium314.keyboard.latin.utils.AutoCorrectionUtils
 import helium314.keyboard.latin.utils.Log
 import helium314.keyboard.latin.utils.BackgroundGatheringCache
@@ -221,6 +222,10 @@ class Suggest(private val mDictionaryFacilitator: DictionaryFacilitator) {
             hasAutoCorrection = false
         } else {
             val firstSuggestion = firstSuggestionInContainer ?: suggestionResults.first()
+            // Varnelė whitelists only fixes that add diacritics and that it is sure about; the user history
+            // must not veto them (it learns the uncorrected "sakini" and then predicts it after "nauja")
+            if (firstSuggestion.mSourceDict is VarneleDictionary && firstSuggestion.isKindOf(SuggestedWordInfo.KIND_WHITELIST))
+                return true to true
             if (suggestionResults.mFirstSuggestionExceedsConfidenceThreshold && firstOccurrenceOfTypedWordInSuggestions != 0) {
                 // mFirstSuggestionExceedsConfidenceThreshold is always set to false, so currently this branch is useless
                 return true to true

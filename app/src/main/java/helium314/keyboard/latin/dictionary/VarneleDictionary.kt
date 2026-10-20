@@ -1,0 +1,131 @@
+// SPDX-License-Identifier: GPL-3.0-only
+package helium314.keyboard.latin.dictionary
+
+import android.util.Log
+import android.util.LruCache
+import helium314.keyboard.latin.BuildConfig
+import dev.imbrasas.varnele.Native
+import helium314.keyboard.latin.NgramContext
+import helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo
+import helium314.keyboard.latin.common.ComposedData
+import helium314.keyboard.latin.settings.SettingsValuesForSuggestion
+import java.util.Locale
+
+/**
+ * Lithuanian main dictionary backed by Varnelė, a rule-based morphological checker.
+ *
+ * A word list cannot hold Lithuanian: every noun, adjective and verb has dozens to
+ * hundreds of forms, plus prefixes and the -si- infix. Varnelė generates them from
+ * grammar rules, so valid forms are never "corrected", and typing without
+ * diacritics ("maciau", "pries pora") is fixed using the grammar of the sentence.
+ *
+ * Scores follow HeliBoard's scale: a suggestion autocorrects when
+ * score / 1,000,000 * (1 - editDistance / length) passes the user's threshold.
+ * Fixes that only add diacritics and are clearly the best guess are marked
+ * whitelisted, which makes them autocorrect regardless of the threshold.
+ */
+class VarneleDictionary(locale: Locale) : Dictionary(TYPE_MAIN, locale) {
+
+    private val validCache = LruCache<String, Boolean>(2000)
+
+    init {
+        Log.i(TAG, "created for $locale")
+        Thread {
+            val t = System.nanoTime()
+            Native.warmUp()
+            Log.i(TAG, "data loaded in ${(System.nanoTime() - t) / 1_000_000} ms")
+        }.start()
+    }
+
+    override fun getSuggestions(
+        composedData: ComposedData,
+        ngramContext: NgramContext,
+        proximityInfoHandle: Long,
+        settingsValuesForSuggestion: SettingsValuesForSuggestion,
+        sessionId: Int,
+        weightForLocale: Float,
+        inOutWeightOfLangModelVsSpatialModel: FloatArray,
+    ): ArrayList<SuggestedWordInfo> {
+        val out = ArrayList<SuggestedWordInfo>()
+        val typed = composedData.mTypedWord
+        // gesture typing needs key geometry, which the binary dictionaries handle
+        if (composedData.mIsBatchMode || typed.isEmpty()) return out
+        val context = previousWords(ngramContext)
+        val t = System.nanoTime()
+        val r = Native.check(typed, context) ?: return out
+        validCache.put(typed, r.isValid)
+        if (BuildConfig.DEBUG) Log.d(TAG, "'$context' + '$typed': ${r.status} " +
+            "fix=${r.contextFixes.map { it.word }} sugg=${r.suggestions.take(3).map { it.word }} " +
+            "${(System.nanoTime() - t) / 1000} µs")
+
+        if (r.isValid) {
+            out.add(info(typed, VALID_SCORE, SuggestedWordInfo.KIND_CORRECTION))
+            // grammar says this valid word is wrong here: "prieš pora" -> "porą"
+            r.contextFixes.forEachIndexed { i, c ->
+                out.add(
+                    if (c.diacriticOnly) info(c.word, CONTEXT_FIX_SCORE - i, AUTOCORRECT_KIND)
+                    else info(c.word, CONTEXT_HINT_SCORE - i, SuggestedWordInfo.KIND_CORRECTION)
+                )
+            }
+            return out
+        }
+
+        val s = r.suggestions
+        s.forEachIndexed { i, c ->
+            // context (a grammar rule) already chose the order, or the top one clearly wins
+            val clearlyBest = i == 0 && (r.contextRule == "context" || s.size == 1 || s[1].cost - c.cost >= CLEAR_MARGIN)
+            val kind = when {
+                clearlyBest && c.diacriticOnly -> AUTOCORRECT_KIND
+                // missing diacritics are free: zodzou -> žodžių is one typo, not four edits
+                c.typoCost <= MAX_AUTOCORRECT_TYPOS ->
+                    SuggestedWordInfo.KIND_CORRECTION or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION
+                else -> SuggestedWordInfo.KIND_CORRECTION
+            }
+            out.add(info(c.word, score(c.cost) - i, kind))
+        }
+        return out
+    }
+
+    override fun isInDictionary(word: String): Boolean {
+        validCache.get(word)?.let { return it }
+        val valid = Native.check(word)?.isValid ?: false
+        validCache.put(word, valid)
+        return valid
+    }
+
+    override fun getFrequency(word: String): Int = if (isInDictionary(word)) 150 else NOT_A_PROBABILITY
+
+    override fun getMaxFrequencyOfExactMatches(word: String): Int = getFrequency(word)
+
+    /** Up to three previous words of the current sentence, oldest first. */
+    private fun previousWords(ngramContext: NgramContext): String {
+        val words = ArrayList<String>()
+        for (n in 1..3) {
+            val w = ngramContext.getNthPrevWord(n)?.toString()
+            if (w.isNullOrBlank()) break   // start of the text: no stray leading space
+            words.add(w)
+            if (ngramContext.isNthPrevWordBeginningOfSentence(n)) break
+        }
+        return words.asReversed().joinToString(" ")
+    }
+
+    private fun info(word: String, score: Int, kind: Int) = SuggestedWordInfo(
+        word, "", score, kind, this, SuggestedWordInfo.NOT_AN_INDEX, SuggestedWordInfo.NOT_A_CONFIDENCE,
+    )
+
+    /** Varnelė's cost (lower is better, ~0.1 for a missing diacritic, ~1 per typo) to HeliBoard's score. */
+    private fun score(cost: Double): Int = ((2.0 - cost) * 700_000).toInt().coerceIn(1, 1_400_000)
+
+    companion object {
+        private const val TAG = "Varnele"
+        private const val VALID_SCORE = 1_200_000
+        private const val CONTEXT_FIX_SCORE = 1_300_000   // above the typed word: autocorrects
+        private const val CONTEXT_HINT_SCORE = 1_100_000  // below it: shown, not applied
+        private const val CLEAR_MARGIN = 0.08
+        private const val MAX_AUTOCORRECT_TYPOS = 1.0
+        private const val AUTOCORRECT_KIND =
+            SuggestedWordInfo.KIND_WHITELIST or SuggestedWordInfo.KIND_FLAG_APPROPRIATE_FOR_AUTO_CORRECTION
+
+        fun isAvailable(locale: Locale) = locale.language == "lt" && Native.available
+    }
+}

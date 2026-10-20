@@ -145,3 +145,43 @@ dependencies {
     testImplementation("androidx.test:runner:1.7.0")
     testImplementation("androidx.test:core:1.7.0")
 }
+
+// ---------------------------------------------------------------------------
+// Varnelė (rule-based Lithuanian checker, Rust): built from a checkout of
+// https://github.com/CremboC/varnele next to this repository, or set
+// -Pvarnele.dir=/path/to/varnele. Without it the keyboard builds as usual and
+// Lithuanian simply has no Varnelė dictionary.
+// ---------------------------------------------------------------------------
+fun varneleDir(): File = File((project.findProperty("varnele.dir") as String?) ?: "${rootDir}/../varnele")
+
+val exportVarneleData by tasks.registering(Exec::class) {
+    description = "Compile Varnelė's grammar into data/varnele.bin"
+    val dir = varneleDir()
+    val data = File(dir, "data/varnele.bin")
+    workingDir = dir
+    commandLine("python3", "-m", "varnele", "export")
+    onlyIf { dir.isDirectory && !data.exists() }
+}
+
+val cargoBuildVarnele by tasks.registering(Exec::class) {
+    description = "Build libvarnele_android.so for all ABIs with cargo-ndk"
+    dependsOn(exportVarneleData)
+    val dir = varneleDir()
+    val ndk = File(androidComponents.sdkComponents.sdkDirectory.get().asFile, "ndk/${android.ndkVersion}")
+    onlyIf { dir.isDirectory }
+    workingDir = File(dir, "rust")
+    environment("ANDROID_NDK_HOME", ndk.absolutePath)
+    // a stable temp dir: the configuration cache would otherwise freeze whatever TMPDIR
+    // the first build ran with, which may no longer exist
+    val tmp = layout.buildDirectory.dir("tmp/cargo").get().asFile
+    environment("TMPDIR", tmp.absolutePath)
+    doFirst { tmp.mkdirs() }
+    commandLine(
+        "${System.getProperty("user.home")}/.cargo/bin/cargo", "ndk",
+        "-t", "armeabi-v7a", "-t", "arm64-v8a", "-t", "x86", "-t", "x86_64",
+        "-o", file("src/main/jniLibs").absolutePath,
+        "build", "--release", "-p", "varnele-android",
+    )
+}
+
+tasks.named("preBuild") { dependsOn(cargoBuildVarnele) }

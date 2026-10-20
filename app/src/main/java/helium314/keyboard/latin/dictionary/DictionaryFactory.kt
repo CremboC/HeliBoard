@@ -31,6 +31,8 @@ object DictionaryFactory {
 
     fun getMainDictsForLocale(context: Context, locale: Locale, useEmojiDict: Boolean): List<Dictionary> {
         val dictList = LinkedList<Dictionary>()
+        // Lithuanian: Varnelė knows every inflected form; word-list dictionaries (if any) stay for gestures
+        if (VarneleDictionary.isAvailable(locale)) dictList.add(VarneleDictionary(locale))
         val (extracted, nonExtracted) = getAvailableDictsForLocale(locale, context, useEmojiDict)
         extracted.sortedBy { !it.name.endsWith(DictionaryInfoUtils.USER_DICTIONARY_SUFFIX) }.forEach {
             // we sort to have user dicts first, so they have priority over internal dicts of the same type

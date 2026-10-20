@@ -1236,6 +1236,13 @@ public final class InputLogic {
             }
         }
 
+        // Varnelė (Lithuanian): fix earlier words and commas the finished word revealed
+        if (wasComposingWord && settingsValues.mAutoCorrectEnabled
+                && VarneleSentenceFixer.INSTANCE.isActive(mDictionaryFacilitator.getCurrentLocale())
+                && VarneleSentenceFixer.INSTANCE.apply(mConnection)) {
+            inputTransaction.setRequiresUpdateSuggestions();
+        }
+
         inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
     }
 

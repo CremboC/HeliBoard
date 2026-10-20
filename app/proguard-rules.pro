@@ -12,3 +12,6 @@
 # after upgrading to gradle 8, stack traces contain "unknown source"
 -keepattributes SourceFile,LineNumberTable
 -dontobfuscate
+
+# Varnelė JNI bridge: functions are looked up by class name
+-keep class dev.imbrasas.varnele.Native { *; }

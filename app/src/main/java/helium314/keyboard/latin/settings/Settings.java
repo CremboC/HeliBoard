@@ -441,7 +441,7 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
         String pref = isLandscape
                       ? (isFolded ? PREF_ENABLE_SPLIT_KEYBOARD_FOLDED_LANDSCAPE : PREF_ENABLE_SPLIT_KEYBOARD_LANDSCAPE)
                       : (isFolded ? PREF_ENABLE_SPLIT_KEYBOARD_FOLDED : PREF_ENABLE_SPLIT_KEYBOARD);
-        return prefs.getBoolean(pref, Defaults.PREF_ENABLE_SPLIT_KEYBOARD);
+        return prefs.getBoolean(pref, Defaults.splitKeyboardDefault(isFolded));
     }
 
     public static float readSplitSpacerScale(SharedPreferences prefs, boolean landscape, boolean folded) {
@@ -539,6 +539,17 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
 
     public boolean isTablet() {
         return mContext.getResources().getInteger(R.integer.config_screen_metrics) >= 3;
+    }
+
+    /** smallest screen width at least 600 dp (tablet, Fold inner screen; not a flip phone) */
+    public boolean isWideScreen() {
+        return mContext.getResources().getConfiguration().smallestScreenWidthDp >= 600;
+    }
+
+    /** Varnelė Klaviatūra: like Gboard, large screens (tablets, unfolded foldables) keep the phone
+     *  layout (backspace next to m, enter bottom right, no extra keys), also when split. */
+    public boolean useTabletLayout() {
+        return false;
     }
 
     @SuppressLint("DiscouragedApi")

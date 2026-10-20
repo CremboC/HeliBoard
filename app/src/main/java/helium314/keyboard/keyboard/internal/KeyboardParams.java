@@ -233,7 +233,7 @@ public class KeyboardParams {
                     * sv.mSidePaddingScale);
 
             mBaseWidth = mOccupiedWidth - mLeftPadding - mRightPadding;
-            final float defaultKeyWidthFactor = context.getResources().getInteger(R.integer.config_screen_metrics) > 2 ? 0.9f : 1f;
+            final float defaultKeyWidthFactor = Settings.getInstance().useTabletLayout() ? 0.9f : 1f;
             final float alphaSymbolKeyWidth = keyAttr.getFraction(R.styleable.Keyboard_Key_keyWidth,
                     1, 1, defaultKeyWidthFactor / DEFAULT_KEYBOARD_COLUMNS);
             mDefaultKeyWidth = mId.getElement().isNumberLayout() ? 0.17f : alphaSymbolKeyWidth;
@@ -276,6 +276,6 @@ public class KeyboardParams {
             keyAttr.recycle();
             keyboardAttr.recycle();
         }
-        setTabletExtraKeys = Settings.getInstance().isTablet() && !mId.getSubtype().isCustom();
+        setTabletExtraKeys = Settings.getInstance().useTabletLayout() && !mId.getSubtype().isCustom();
     }
 }

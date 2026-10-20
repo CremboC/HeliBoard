@@ -17,6 +17,7 @@ import helium314.keyboard.latin.utils.POPUP_KEYS_ORDER_DEFAULT
 import helium314.keyboard.latin.utils.defaultClipboardToolbarPref
 import helium314.keyboard.latin.utils.defaultPinnedToolbarPref
 import helium314.keyboard.latin.utils.defaultToolbarPref
+import helium314.keyboard.latin.utils.FoldableUtils
 
 object Defaults {
     fun initDynamicDefaults(context: Context) {
@@ -31,7 +32,7 @@ object Defaults {
         LayoutType.MAIN -> "qwerty"
         LayoutType.SYMBOLS -> "symbols"
         LayoutType.MORE_SYMBOLS -> "symbols_shifted"
-        LayoutType.FUNCTIONAL -> if (Settings.getInstance().isTablet) "functional_keys_tablet" else "functional_keys"
+        LayoutType.FUNCTIONAL -> if (Settings.getInstance().useTabletLayout()) "functional_keys_tablet" else "functional_keys"
         LayoutType.NUMBER -> "number"
         LayoutType.NUMBER_ROW -> "number_row"
         LayoutType.NUMPAD -> "numpad"
@@ -86,6 +87,11 @@ object Defaults {
             "fr${Separators.SET}${ExtraValue.KEYBOARD_LAYOUT_SET}=MAIN:qwertz${Separators.SETS}" +
             "hu${Separators.SET}${ExtraValue.KEYBOARD_LAYOUT_SET}=MAIN:qwerty"
     const val PREF_ENABLE_SPLIT_KEYBOARD = false
+    /** Varnelė Klaviatūra: split by default on a wide unfolded screen (Fold inner screen), like Gboard.
+     *  Not on a flip phone: unfolded it is phone-sized, folded only the cover screen is left. */
+    @JvmStatic
+    fun splitKeyboardDefault(isFolded: Boolean) =
+        FoldableUtils.isFoldable && !isFolded && Settings.getInstance().isWideScreen
     @JvmField
     val PREF_SPLIT_SPACER_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
     @JvmField

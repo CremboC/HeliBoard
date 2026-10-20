@@ -76,7 +76,8 @@ jobs:
           export VERSION_CODE=$((10000 + GITHUB_RUN_NUMBER))
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
           chmod +x gradlew
-          ./gradlew bundleNouserlib assembleNouserlib
+          # gradle.properties caps the daemon at 1 GB, too little for bundletool on the .aab
+          ./gradlew -Dorg.gradle.jvmargs=-Xmx4g bundleNouserlib assembleNouserlib
 
       - name: Verify signatures
         working-directory: HeliBoard/app/build/outputs

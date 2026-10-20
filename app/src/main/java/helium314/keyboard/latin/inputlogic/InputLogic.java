@@ -344,6 +344,13 @@ public final class InputLogic {
         // Don't allow cancellation of manual pick
         mLastComposedWord.deactivate();
 
+        // Varnelė (Lithuanian): a picked word finishes a word like a space does, so fix the
+        // earlier words and commas it reveals (the picked word itself stays as chosen)
+        if (!suggestionInfo.isEmoji() && settingsValues.mAutoCorrectEnabled
+                && VarneleSentenceFixer.INSTANCE.isActive(mDictionaryFacilitator.getCurrentLocale())) {
+            VarneleSentenceFixer.INSTANCE.apply(mConnection, true);
+        }
+
         if (suggestionInfo.isEmoji()) {
             RecentEmojis.add(suggestion);
         }

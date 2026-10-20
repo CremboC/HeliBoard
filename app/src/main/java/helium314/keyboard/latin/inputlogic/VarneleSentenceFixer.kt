@@ -24,8 +24,13 @@ object VarneleSentenceFixer {
 
     fun isActive(locale: Locale) = locale.language == "lt" && Native.available
 
-    /** @return true if the text was changed */
-    fun apply(connection: RichInputConnection): Boolean {
+    /**
+     * @param picked the last word was picked from the suggestion strip: the user chose it,
+     *   so it is left alone (only earlier words and commas are fixed)
+     * @return true if the text was changed
+     */
+    @JvmOverloads
+    fun apply(connection: RichInputConnection, picked: Boolean = false): Boolean {
         val before = connection.getTextBeforeCursor(MAX_CONTEXT, 0)?.toString() ?: return false
         if (connection.expectedSelectionStart != connection.expectedSelectionEnd) return false
         // the current sentence: everything after the last sentence end
@@ -42,13 +47,18 @@ object VarneleSentenceFixer {
 
         // the word this separator finished, in case the keyboard committed it as typed
         // (punctuation, or a learned word that outranked the fix): "nauja sakini?" -> "sakinį"
-        var fixed = fixLastWord(sentence)
+        var end = sentence.length
+        while (end > 0 && !sentence[end - 1].isLetter()) end--
+        var lastWordStart = end
+        while (lastWordStart > 0 && sentence[lastWordStart - 1].isLetter()) lastWordStart--
+        var fixed = if (picked) sentence else fixLastWord(sentence)
         // a second pass catches what the first fix reveals: "kuriu" -> "kurių" then needs a comma
         repeat(2) {
             val sb = StringBuilder(fixed)
             var changed = false
             for (f in Native.findings(fixed).sortedByDescending { it.start }) {
                 if (f.end > fixed.length) continue
+                if (picked && f.rule != "comma" && f.end > lastWordStart) continue
                 if (f.rule == "comma") {
                     // wait for the next word: "pirk bet" may become "pirk bet ką" (no comma)
                     val nextWordTyped = (f.end until fixed.length).any { fixed[it].isLetter() }

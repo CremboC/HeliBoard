@@ -92,10 +92,11 @@ object VarneleSentenceFixer {
         return sentence.substring(0, start) + fix + sentence.substring(end)
     }
 
+    /** Drop diacritics; y stays: it is its own key, so i/y swaps are real edits (šita, not syta). */
     private fun fold(s: String): String = buildString {
         for (c in s.lowercase()) append(
             when (c) {
-                'ą' -> 'a'; 'č' -> 'c'; 'ę', 'ė' -> 'e'; 'į', 'y' -> 'i'; 'š' -> 's'; 'ų', 'ū' -> 'u'; 'ž' -> 'z'
+                'ą' -> 'a'; 'č' -> 'c'; 'ę', 'ė' -> 'e'; 'į' -> 'i'; 'š' -> 's'; 'ų', 'ū' -> 'u'; 'ž' -> 'z'
                 else -> c
             }
         )

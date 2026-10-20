@@ -13,11 +13,12 @@ Fork-specific files (everything else is upstream HeliBoard):
 - hooks: DictionaryFactory.getMainDictsForLocale, InputLogic.handleSeparatorEvent (end)
 - app/build.gradle.kts: exportVarneleData + cargoBuildVarnele tasks; proguard keep rule
 
-Remotes: `origin` = upstream Helium314/HeliBoard (pull only, never push); `fork` =
-github.com/CremboC/HeliBoard, branch `varnele` (push here).
+Remotes: `origin` = upstream HeliBorg/HeliBoard (pull only, never push); `fork` =
+github.com/CremboC/Varnele-Keyboard (was CremboC/HeliBoard), branch `main` (push here).
+Upstream updates: merge `origin/main` into `main`; never use GitHub's "Sync fork" discard.
 HeliBoard's AI_USAGE.md prohibits AI-generated upstream PRs: keep this work in the fork.
 
-Release / Google Play (CI): `.github/workflows/varnele-release.yml` runs on push to `varnele`
+Release / Google Play (CI): `.github/workflows/varnele-release.yml` runs on push to `main`
 and on manual dispatch. It checks out CremboC/varnele (main) next to this repo, sets up
 Python 3.12, Rust + 4 Android targets, cargo-ndk, NDK 28.0.13004108, and builds the
 `nouserlib` build type (the Play build: no user-supplied gesture library / `System.load`):

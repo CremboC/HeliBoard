@@ -7,7 +7,7 @@ name: Varnelė release build
 
 on:
   push:
-    branches: [ varnele ]
+    branches: [ main ]
   workflow_dispatch:
 
 concurrency:

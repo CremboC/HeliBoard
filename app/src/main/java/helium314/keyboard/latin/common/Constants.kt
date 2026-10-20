@@ -9,8 +9,8 @@ object Links {
     // HeliBoard's docs and community (wiki, layouts, colors) stay upstream
     const val GITHUB = "https://github.com/HeliBorg/HeliBoard"
     // this fork's source: the GPL requires it to be available
-    const val FORK = "https://github.com/CremboC/HeliBoard/tree/varnele"
-    const val LICENSE = "https://github.com/CremboC/HeliBoard/blob/varnele/LICENSE"
+    const val FORK = "https://github.com/CremboC/Varnele-Keyboard"
+    const val LICENSE = "https://github.com/CremboC/Varnele-Keyboard/blob/main/LICENSE"
     const val WIKI_URL = "$GITHUB/wiki"
     const val LAYOUT_WIKI_URL = "$WIKI_URL/2.-Layouts"
     const val CUSTOM_LAYOUTS = "$GITHUB/discussions/categories/custom-layout"

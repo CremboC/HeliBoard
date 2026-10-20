@@ -1514,6 +1514,12 @@ public final class InputLogic {
         }
 
         final boolean isFromSuggestionStrip = event.isSuggestionStripPress();
+        // Varnelė Klaviatūra: a space typed right after a word moves behind sentence punctuation,
+        // like Gboard ("tašką ." -> "tašką. "); other symbols keep it (5 €)
+        if (SpaceState.WEAK == inputTransaction.getSpaceState() && !isFromSuggestionStrip
+                && ".,;:!?".indexOf(codePoint) >= 0) {
+            return true;
+        }
         if (Constants.CODE_ENTER == codePoint &&
                 SpaceState.SWAP_PUNCTUATION == inputTransaction.getSpaceState()) {
             mConnection.removeTrailingSpace();

@@ -67,7 +67,7 @@ class VarneleDictionary(
             // grammar says this valid word is wrong here: "prieš pora" -> "porą"
             r.contextFixes.forEachIndexed { i, c ->
                 out.add(
-                    if (c.diacriticOnly) info(c.word, CONTEXT_FIX_SCORE - i, AUTOCORRECT_KIND)
+                    if (isSure(r, i)) info(c.word, CONTEXT_FIX_SCORE - i, AUTOCORRECT_KIND)
                     else info(c.word, CONTEXT_HINT_SCORE - i, SuggestedWordInfo.KIND_CORRECTION)
                 )
             }
@@ -174,6 +174,16 @@ class VarneleDictionary(
 
         fun isAvailable(locale: Locale) = locale.language == "lt" && Native.available
 
+        /**
+         * A context fix of a valid word that is applied without asking: one that only changes
+         * diacritics, or the subject rule's verb form right after a personal pronoun
+         * (aš buvo -> buvau), which is almost never intended.
+         */
+        private fun isSure(r: Native.WordResult, i: Int): Boolean {
+            val c = r.contextFixes.getOrNull(i) ?: return false
+            return c.diacriticOnly || (r.contextRule == "subject" && i == 0)
+        }
+
         /** context (a grammar rule) already chose the order, or the top suggestion clearly wins */
         private fun isClearlyBest(r: Native.WordResult): Boolean {
             val s = r.suggestions
@@ -181,11 +191,12 @@ class VarneleDictionary(
         }
 
         /**
-         * The fix that is safe to apply without asking: only diacritics change, and it is the
-         * dictionary's clear choice (the same ones getSuggestions marks whitelisted). Null if none.
+         * The fix that is safe to apply without asking (the same ones getSuggestions marks
+         * whitelisted): only diacritics change and it is the clear choice, or a subject-verb fix.
+         * Null if none.
          */
         fun confidentFix(r: Native.WordResult): String? = when {
-            r.isValid -> r.contextFixes.firstOrNull()?.takeIf { it.diacriticOnly }?.word
+            r.isValid -> r.contextFixes.firstOrNull()?.takeIf { isSure(r, 0) }?.word
             isClearlyBest(r) && r.suggestions[0].diacriticOnly && !r.keyShift -> r.suggestions[0].word
             else -> null
         }

@@ -88,7 +88,9 @@ object VarneleSentenceFixer {
         val r = Native.check(word, context) ?: return sentence
         var fix = VarneleDictionary.confidentFix(r) ?: return sentence
         if (word[0].isUpperCase()) fix = fix.replaceFirstChar { it.uppercaseChar() }
-        if (fix == word || fix.length != word.length || fold(fix) != fold(word)) return sentence
+        if (fix == word) return sentence
+        // a diacritic fix keeps the letters; only the subject rule may change them (aš buvo -> buvau)
+        if (r.contextRule != "subject" && (fix.length != word.length || fold(fix) != fold(word))) return sentence
         return sentence.substring(0, start) + fix + sentence.substring(end)
     }
 

@@ -2,7 +2,8 @@ name: Varnelė release build
 # Signed Google Play bundle (.aab) and universal APK from the `nouserlib` build type,
 # which cannot load a user-supplied native library (Play forbids code from outside the app).
 # versionCode = 10000 + run number (see app/build.gradle.kts).
-# Secrets: VARNELE_KEYSTORE_BASE64, VARNELE_KEYSTORE_PASSWORD, VARNELE_KEY_ALIAS, VARNELE_KEY_PASSWORD
+# Secrets: VARNELE_KEYSTORE_BASE64, VARNELE_KEYSTORE_PASSWORD, VARNELE_KEY_ALIAS, VARNELE_KEY_PASSWORD,
+# and VARNELE_DEPLOY_KEY (read-only deploy key of CremboC/varnele) while that repo is private.
 
 on:
   push:
@@ -21,24 +22,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: HeliBoard
 
       - name: Check out Varnelė
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: CremboC/varnele
           ref: main
+          ssh-key: ${{ secrets.VARNELE_DEPLOY_KEY }} # empty: public checkout with github.token
           path: varnele
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -84,14 +86,14 @@ jobs:
           unzip -l apk/nouserlib/*.apk | grep libvarnele_android.so
 
       - name: Upload AAB
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: VarneleKlaviatura-${{ env.VERSION_CODE }}-aab
           path: HeliBoard/app/build/outputs/bundle/nouserlib/*.aab
           if-no-files-found: error
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: VarneleKlaviatura-${{ env.VERSION_CODE }}-apk
           path: HeliBoard/app/build/outputs/apk/nouserlib/*.apk
@@ -102,7 +104,7 @@ jobs:
         run: rm -f "$RUNNER_TEMP/upload.jks"
 
       - name: Archive reports for failed job
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: reports
           path: 'HeliBoard/*/build/reports'

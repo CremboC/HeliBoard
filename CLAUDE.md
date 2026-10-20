@@ -22,8 +22,10 @@ and on manual dispatch. It checks out CremboC/varnele (main) next to this repo, 
 Python 3.12, Rust + 4 Android targets, cargo-ndk, NDK 28.0.13004108, and builds the
 `nouserlib` build type (the Play build: no user-supplied gesture library / `System.load`):
 `bundleNouserlib` (.aab for Play) + `assembleNouserlib` (universal APK for phones), both
-uploaded as artifacts. Upstream's build-debug-apk / build-test-auto workflows are disabled
-on the fork (`gh workflow disable`), files kept for clean upstream merges.
+uploaded as artifacts. Upstream's build-debug-apk / build-test-auto workflows only trigger on
+dispatch/pull_request, so they never run on the fork; files left untouched for clean merges.
+While CremboC/varnele is private, the checkout uses secret `VARNELE_DEPLOY_KEY` (private half
+of a read-only deploy key on CremboC/varnele; key pair in `~/.keystores/varnele-deploy-key`).
 - Version: versionName 1.0; versionCode = 10000 + GitHub run number (env `VERSION_CODE`),
   10000 locally. Must stay > upstream codes (4300): AppUpgrade runs every `oldVersion <= N`
   migration. When merging upstream, new `oldVersion <= N` migrations (N < 10000) will NOT

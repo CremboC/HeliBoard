@@ -14,6 +14,7 @@ import helium314.keyboard.latin.NgramContext
 import helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo
 import helium314.keyboard.latin.common.ComposedData
 import helium314.keyboard.latin.inputlogic.VarneleUserLm
+import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.settings.SettingsValuesForSuggestion
 import helium314.keyboard.latin.utils.JniUtils
 import java.util.Locale
@@ -242,12 +243,14 @@ class VarneleDictionary(
          * The ghost: the word being typed completed (kod -> kodėl), and the next word too when the
          * language model is nearly sure of it (Rust `keyboard_ghost`). Shown in the strip, committed
          * only when tapped. Null if nothing completes [typed] or [typed] itself is likelier.
+         * The next word only if its setting is on.
          */
         @JvmStatic
         fun ghost(typed: String): String? {
             if (typed.isEmpty() || !typed.all { it.isLetter() }) return null
             val t = System.nanoTime()
-            val ghost = Native.ghost(textBefore, typed)
+            var ghost = Native.ghost(textBefore, typed)
+            if (!Settings.getValues().mVarneleGhostNext) ghost = ghost?.substringBefore(' ')
             if (BuildConfig.DEBUG) Log.d(TAG, "ghost '$typed': $ghost ${(System.nanoTime() - t) / 1000} µs")
             return ghost
         }

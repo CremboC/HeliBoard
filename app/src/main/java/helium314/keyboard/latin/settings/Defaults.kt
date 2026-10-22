@@ -71,6 +71,10 @@ object Defaults {
     const val PREF_VARNELE_KEY_SHIFT = true
     const val PREF_VARNELE_FORMAL = false
     const val PREF_VARNELE_LEARN = true
+    const val PREF_VARNELE_COMMAS = true
+    const val PREF_VARNELE_FIX_EARLIER = true
+    const val PREF_VARNELE_UNDERLINE = true
+    const val PREF_VARNELE_GHOST_NEXT = true
     const val PREF_BACKSPACE_REVERTS_AUTOCORRECT = true
     const val PREF_AUTOCORRECT_CAPITALIZED_SUGGESTION = true
     const val PREF_CENTER_SUGGESTION_TEXT_TO_ENTER = false

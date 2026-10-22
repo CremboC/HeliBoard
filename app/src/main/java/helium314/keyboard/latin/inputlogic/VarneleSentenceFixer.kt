@@ -6,6 +6,7 @@ import dev.imbrasas.varnele.Native
 import helium314.keyboard.latin.BuildConfig
 import helium314.keyboard.latin.RichInputConnection
 import helium314.keyboard.latin.dictionary.VarneleDictionary
+import helium314.keyboard.latin.settings.Settings
 import java.util.Locale
 
 /**
@@ -15,7 +16,8 @@ import java.util.Locale
  *    "žodžių kuriu aš rašau" -> "kurių", "prieš pora dienų" -> "porą"
  *  - missing commas before clause starters: "sakė kad" -> "sakė, kad"
  * Only changes that add or swap diacritics (same letters otherwise) and commas are
- * applied automatically; anything else stays a suggestion.
+ * applied automatically; anything else stays a suggestion. Commas and earlier words each have
+ * a setting; the word just finished is always fixed (it is autocorrect's job too).
  */
 object VarneleSentenceFixer {
     private const val TAG = "Varnele"
@@ -52,6 +54,7 @@ object VarneleSentenceFixer {
         var lastWordStart = end
         while (lastWordStart > 0 && sentence[lastWordStart - 1].isLetter()) lastWordStart--
         var fixed = if (picked) sentence else fixLastWord(sentence)
+        val settings = Settings.getValues()
         // a second pass catches what the first fix reveals: "kuriu" -> "kurių" then needs a comma
         repeat(2) {
             val sb = StringBuilder(fixed)
@@ -60,6 +63,7 @@ object VarneleSentenceFixer {
                 if (f.end > fixed.length) continue
                 if (picked && f.rule != "comma" && f.end > lastWordStart) continue
                 if (f.rule == "comma") {
+                    if (!settings.mVarneleCommas) continue
                     // wait for the next word: "pirk bet" may become "pirk bet ką" (no comma)
                     val nextWordTyped = (f.end until fixed.length).any { fixed[it].isLetter() }
                     if (nextWordTyped && f.start >= 2 && fixed[f.start - 1] == ' ' && fixed[f.start - 2].isLetter()) {
@@ -67,6 +71,7 @@ object VarneleSentenceFixer {
                         changed = true
                     }
                 } else if (f.rule in SAFE_RULES) {
+                    if (!settings.mVarneleFixEarlier && f.start < lastWordStart) continue
                     val s = f.suggestions.firstOrNull() ?: continue
                     if (s != f.word && s.length == f.word.length && fold(s) == fold(f.word)) {
                         sb.replace(f.start, f.end, s)

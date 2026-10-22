@@ -150,7 +150,16 @@
     <string name="auto_correct_shortcuts_summary">When enabled shortcuts might be expanded by autocorrect</string>
     <!-- Varnelė (Lithuanian) -->
     <string name="settings_screen_varnele">Varnelė</string>
-    <string name="settings_screen_varnele_summary">Lithuanian checking: style and corrections</string>
+    <string name="settings_screen_varnele_summary">Lithuanian corrections, commas and predictions</string>
+    <string name="settings_category_varnele_predictions">Predictions</string>
+    <string name="varnele_fix_earlier">Fix earlier words</string>
+    <string name="varnele_fix_earlier_summary">Correct the endings of words already typed when a later word shows what they should be (visu … žodžių → visų žodžių)</string>
+    <string name="varnele_commas">Add missing commas</string>
+    <string name="varnele_commas_summary">Put a comma before words like kad, kuris and bet (sakė kad → sakė, kad)</string>
+    <string name="varnele_underline">Underline unknown words</string>
+    <string name="varnele_underline_summary">Mark words that are not recognised with a red line; tap one to see corrections</string>
+    <string name="varnele_ghost_next">Suggest the next word too</string>
+    <string name="varnele_ghost_next_summary">When the next word is almost certain, the completed word in the suggestion strip includes it (kod → kodėl tu)</string>
     <string name="varnele_formal">Formal Lithuanian</string>
     <string name="varnele_formal_summary">Correct spoken forms to standard ones and never suggest them, typed or swiped (valgyt → valgyti, einam → einame)</string>
     <string name="varnele_learn">Learn from my writing</string>
@@ -159,7 +168,7 @@
     <string name="varnele_forget_summary">Delete everything learned from your writing</string>
     <string name="varnele_forget_confirm">Delete all words and phrases learned from your writing?</string>
     <string name="varnele_forget_button">Forget</string>
-    <string name="varnele_key_shift">Fix whole-word key slips (Lithuanian)</string>
+    <string name="varnele_key_shift">Fix whole-word key slips</string>
     <string name="varnele_key_shift_summary">If a word is not recognised at all, try neighbouring keys for every letter (fofrkua → didelis)</string>
     <!-- Option to enable auto correction for for capitalized suggestions (by pressing shift) -->
     <string name="auto_correct_capitalized_suggestions">Auto-correct capitalized suggestions</string>

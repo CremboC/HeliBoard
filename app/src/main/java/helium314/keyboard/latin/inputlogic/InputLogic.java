@@ -2421,7 +2421,8 @@ public final class InputLogic {
         CharSequence chosenWordWithSuggestions = getTextWithSuggestionSpan(mLatinIME, chosenWord,
                 mSuggestedWords, getDictionaryFacilitatorLocale());
         // Varnelė (Lithuanian): underline a word it does not know, independent of the system spell checker
-        if (VarneleDictionary.Companion.isAvailable(getDictionaryFacilitatorLocale())) {
+        if (VarneleDictionary.Companion.isAvailable(getDictionaryFacilitatorLocale())
+                && Settings.getValues().mVarneleUnderline) {
             chosenWordWithSuggestions = VarneleDictionary.markMisspelled(mLatinIME, chosenWordWithSuggestions,
                     getDictionaryFacilitatorLocale());
         }

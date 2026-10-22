@@ -152,6 +152,11 @@ public class SettingsValues {
     public final int mKeypressVibrationDuration;
     public final float mKeypressSoundVolume;
     public final boolean mAutoCorrectionEnabledPerUserSettings;
+    // Varnelė: commas and earlier words fixed by the sentence fixer, red underline, the ghost's next word
+    public final boolean mVarneleCommas;
+    public final boolean mVarneleFixEarlier;
+    public final boolean mVarneleUnderline;
+    public final boolean mVarneleGhostNext;
     public final boolean mAutoCorrectCapitalizedSuggestion;
     public final boolean mBackspaceRevertsAutocorrect;
     public final boolean mAutoCorrectShortcuts;
@@ -226,6 +231,10 @@ public class SettingsValues {
         mAutoCorrectionEnabledPerUserSettings = prefs.getBoolean(Settings.PREF_AUTO_CORRECTION, Defaults.PREF_AUTO_CORRECTION);
         Native.setFormal(prefs.getBoolean(Settings.PREF_VARNELE_FORMAL, Defaults.PREF_VARNELE_FORMAL));
         Native.setLearn(prefs.getBoolean(Settings.PREF_VARNELE_LEARN, Defaults.PREF_VARNELE_LEARN));
+        mVarneleCommas = prefs.getBoolean(Settings.PREF_VARNELE_COMMAS, Defaults.PREF_VARNELE_COMMAS);
+        mVarneleFixEarlier = prefs.getBoolean(Settings.PREF_VARNELE_FIX_EARLIER, Defaults.PREF_VARNELE_FIX_EARLIER);
+        mVarneleUnderline = prefs.getBoolean(Settings.PREF_VARNELE_UNDERLINE, Defaults.PREF_VARNELE_UNDERLINE);
+        mVarneleGhostNext = prefs.getBoolean(Settings.PREF_VARNELE_GHOST_NEXT, Defaults.PREF_VARNELE_GHOST_NEXT);
         mAutoCorrectEnabled = mAutoCorrectionEnabledPerUserSettings
                 && (mInputAttributes.mInputTypeShouldAutoCorrect || prefs.getBoolean(Settings.PREF_MORE_AUTO_CORRECTION, Defaults.PREF_MORE_AUTO_CORRECTION))
                 && (mUrlDetectionEnabled || !InputTypeUtils.isUriOrEmailType(mInputAttributes.mInputType));

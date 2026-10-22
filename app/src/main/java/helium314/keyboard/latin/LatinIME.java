@@ -63,6 +63,8 @@ import helium314.keyboard.latin.common.ViewOutlineProviderUtilsKt;
 import helium314.keyboard.latin.define.DebugFlags;
 import helium314.keyboard.latin.inputlogic.InputLogic;
 import helium314.keyboard.latin.personalization.PersonalizationHelper;
+import helium314.keyboard.latin.dictionary.VarneleDictionary;
+import helium314.keyboard.latin.settings.Defaults;
 import helium314.keyboard.latin.settings.Settings;
 import helium314.keyboard.latin.settings.SettingsSubtype;
 import helium314.keyboard.latin.settings.SettingsValues;
@@ -826,6 +828,18 @@ public class LatinIME extends InputMethodService implements
         mInputLogic.onSubtypeChanged(SubtypeLocaleUtils.getCombiningRulesExtraValue(subtype),
                 mSettings.getCurrent());
         loadKeyboard();
+        // Varnelė fork: gesture typing depends on the language (Varnelė decodes Lithuanian without
+        // Google's library), so a language switch inside a field turns it on or off; the settings
+        // themselves are only reloaded when the next field starts
+        final MainKeyboardView mainKeyboardView = mKeyboardSwitcher.getMainKeyboardView();
+        if (mainKeyboardView != null) {
+            final SettingsValues settingsValues = mSettings.getCurrent();
+            mainKeyboardView.setGestureHandlingEnabledByUser(
+                    VarneleDictionary.gesturesFor(mRichImm.getCurrentSubtypeLocale())
+                            && KtxKt.prefs(this).getBoolean(Settings.PREF_GESTURE_INPUT, Defaults.PREF_GESTURE_INPUT),
+                    settingsValues.mGestureTrailEnabled,
+                    settingsValues.mGestureFloatingPreviewTextEnabled);
+        }
         if (hasSuggestionStripView()) {
             mSuggestionStripView.setRtl(mRichImm.getCurrentSubtype().isRtlSubtype());
         }

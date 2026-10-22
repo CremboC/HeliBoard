@@ -810,7 +810,7 @@ New dictionary:
     <!-- Title of the credits entry in the About screen -->
     <string name="about_credits">Credits</string>
     <!-- Credits for the projects this keyboard is built on -->
-    <string name="about_credits_text" translatable="false">Varnelė Klaviatūra is a fork of HeliBoard by Helium314 and the HeliBoard contributors, itself based on OpenBoard, the AOSP Keyboard (Apache 2.0) and LineageOS. Icon by Fabian OvrWrt with contributions from The Eclectic Dyslexic (CC BY-SA 4.0). Lithuanian checking by Varnelė, using the ispell-lt word list (BSD). Tap to open HeliBoard.</string>
+    <string name="about_credits_text" translatable="false">Varnelė Klaviatūra is a fork of HeliBoard by Helium314 and the HeliBoard contributors, itself based on OpenBoard, the AOSP Keyboard (Apache 2.0) and LineageOS. Icon by Fabian OvrWrt with contributions from The Eclectic Dyslexic (CC BY-SA 4.0). Lithuanian checking by Varnelė, using the ispell-lt word list (BSD). Word and word-pair frequencies counted from Lithuanian Wikipedia (CC BY-SA 4.0), subtitles from OpenSubtitles.org via the OPUS collection, and Tatoeba (CC BY 2.0 FR); only counts are included, no text. Tap to open HeliBoard.</string>
     <!-- link to the wiki for about screen -->
     <string name="about_wiki_link">Go to Wiki</string>
     <!-- description for wiki link -->

@@ -18,6 +18,12 @@ and [LineageOS](https://review.lineageos.org/admin/repos/LineageOS/android_packa
 The icon is by [Fabian OvrWrt](https://github.com/FabianOvrWrt) with contributions from
 [The Eclectic Dyslexic](https://github.com/the-eclectic-dyslexic) (CC BY-SA 4.0).
 Varnelė's Lithuanian lexicon comes from [ispell-lt](https://github.com/ispell-lt/ispell-lt) (BSD).
+Its word and word-pair frequencies (ranking, autocorrect, swipe and next-word prediction) are
+counted from [Lithuanian Wikipedia](https://lt.wikipedia.org) (CC BY-SA 4.0), subtitles from
+[OpenSubtitles.org](https://www.opensubtitles.org) via the [OPUS](https://opus.nlpl.eu) collection
+(P. Lison and J. Tiedemann, 2016, *OpenSubtitles2016: Extracting Large Parallel Corpora from Movie
+and TV Subtitles*), and [Tatoeba](https://tatoeba.org) (CC BY 2.0 FR). The app contains only
+counts, no text from these sources.
 
 Licensed like HeliBoard under the GNU General Public License v3.0 (see [LICENSE](LICENSE));
 AOSP-derived code is also under [Apache 2.0](LICENSE-Apache-2.0). Please report problems

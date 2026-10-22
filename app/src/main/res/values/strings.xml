@@ -149,6 +149,10 @@
     <!-- Description for auto_correct_shortcuts -->
     <string name="auto_correct_shortcuts_summary">When enabled shortcuts might be expanded by autocorrect</string>
     <!-- Varnelė (Lithuanian) -->
+    <string name="settings_screen_varnele">Varnelė</string>
+    <string name="settings_screen_varnele_summary">Lithuanian checking: style and corrections</string>
+    <string name="varnele_formal">Formal Lithuanian</string>
+    <string name="varnele_formal_summary">Correct spoken forms to standard ones and never suggest them, typed or swiped (valgyt → valgyti, einam → einame)</string>
     <string name="varnele_key_shift">Fix whole-word key slips (Lithuanian)</string>
     <string name="varnele_key_shift_summary">If a word is not recognised at all, try neighbouring keys for every letter (fofrkua → didelis)</string>
     <!-- Option to enable auto correction for for capitalized suggestions (by pressing shift) -->

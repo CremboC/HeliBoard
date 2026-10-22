@@ -18,6 +18,7 @@ import android.view.inputmethod.InputMethodSubtype;
 import androidx.annotation.NonNull;
 import androidx.core.util.TypedValueCompat;
 
+import dev.imbrasas.varnele.Native;
 import helium314.keyboard.compat.ConfigurationCompatKt;
 import helium314.keyboard.compat.IsLockedCompatKt;
 import helium314.keyboard.keyboard.KeyboardActionListener;
@@ -223,6 +224,7 @@ public class SettingsValues {
         mBlockPotentiallyOffensive = prefs.getBoolean(Settings.PREF_BLOCK_POTENTIALLY_OFFENSIVE, Defaults.PREF_BLOCK_POTENTIALLY_OFFENSIVE);
         mUrlDetectionEnabled = prefs.getBoolean(Settings.PREF_URL_DETECTION, Defaults.PREF_URL_DETECTION);
         mAutoCorrectionEnabledPerUserSettings = prefs.getBoolean(Settings.PREF_AUTO_CORRECTION, Defaults.PREF_AUTO_CORRECTION);
+        Native.setFormal(prefs.getBoolean(Settings.PREF_VARNELE_FORMAL, Defaults.PREF_VARNELE_FORMAL));
         mAutoCorrectEnabled = mAutoCorrectionEnabledPerUserSettings
                 && (mInputAttributes.mInputTypeShouldAutoCorrect || prefs.getBoolean(Settings.PREF_MORE_AUTO_CORRECTION, Defaults.PREF_MORE_AUTO_CORRECTION))
                 && (mUrlDetectionEnabled || !InputTypeUtils.isUriOrEmailType(mInputAttributes.mInputType));

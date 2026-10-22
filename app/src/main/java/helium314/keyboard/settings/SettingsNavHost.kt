@@ -32,6 +32,7 @@ import helium314.keyboard.settings.screens.SecondaryLayoutScreen
 import helium314.keyboard.settings.screens.SubtypeScreen
 import helium314.keyboard.settings.screens.TextCorrectionScreen
 import helium314.keyboard.settings.screens.ToolbarScreen
+import helium314.keyboard.settings.screens.VarneleScreen
 import helium314.keyboard.settings.screens.gesturedata.GestureDataScreen
 import helium314.keyboard.settings.screens.gesturedata.ReviewScreen
 import kotlinx.coroutines.CoroutineScope
@@ -78,6 +79,7 @@ fun SettingsNavHost(
                 onClickLanguage = { navController.navigate(SettingsDestination.Languages) },
                 onClickLayouts = { navController.navigate(SettingsDestination.Layouts) },
                 onClickDictionaries = { navController.navigate(SettingsDestination.Dictionaries) },
+                onClickVarnele = { navController.navigate(SettingsDestination.Varnele) },
                 onClickBack = ::goBack,
             )
         }
@@ -86,6 +88,9 @@ fun SettingsNavHost(
         }
         composable(SettingsDestination.TextCorrection) {
             TextCorrectionScreen(onClickBack = ::goBack)
+        }
+        composable(SettingsDestination.Varnele) {
+            VarneleScreen(onClickBack = ::goBack)
         }
         composable(SettingsDestination.Preferences) {
             PreferencesScreen(onClickBack = ::goBack)
@@ -148,6 +153,7 @@ object SettingsDestination {
     const val Settings = "settings"
     const val About = "about"
     const val TextCorrection = "text_correction"
+    const val Varnele = "varnele"
     const val Preferences = "preferences"
     const val Toolbar = "toolbar"
     const val GestureTyping = "gesture_typing"

@@ -285,12 +285,16 @@ class VarneleDictionary(
          * A context fix of a valid word that is applied without asking: one that only changes
          * diacritics, or the subject rule's verb form right after a personal pronoun
          * (aš buvo -> buvau), which is almost never intended, or a never-seen short word one
-         * key from a common one (kak -> kai).
+         * key from a common one (kak -> kai), or in formal mode the standard form of a spoken
+         * one (valgyt -> valgyti).
          */
         private fun isSure(r: Native.WordResult, i: Int): Boolean {
             val c = r.contextFixes.getOrNull(i) ?: return false
-            return c.diacriticOnly || (i == 0 && (r.contextRule == "subject" || r.contextRule == "rare"))
+            return c.diacriticOnly || (i == 0 && r.contextRule in SURE_RULES)
         }
+
+        /** context rules whose first fix may change letters, not only diacritics */
+        val SURE_RULES = setOf("subject", "rare", "formal")
 
         /** context (a grammar rule) already chose the order, or the top suggestion clearly wins */
         private fun isClearlyBest(r: Native.WordResult): Boolean {

@@ -438,4 +438,9 @@
     <string name="delete_confirmation">Tikrai pašalinti %s?</string>
     <string name="name_invalid">Netinkamas vardas</string>
     <string name="custom_subtype">Pasirinktinis tipas</string>
+    <!-- Varnelė -->
+    <string name="settings_screen_varnele">Varnelė</string>
+    <string name="settings_screen_varnele_summary">Lietuvių kalbos tikrinimas: stilius ir taisymai</string>
+    <string name="varnele_formal">Bendrinė kalba</string>
+    <string name="varnele_formal_summary">Šnekamosios formos taisomos į bendrines ir niekada nesiūlomos, rašant ar braukiant (valgyt → valgyti, einam → einame)</string>
 </resources>

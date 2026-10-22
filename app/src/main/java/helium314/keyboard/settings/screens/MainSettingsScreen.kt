@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import dev.imbrasas.varnele.Native
 import helium314.keyboard.latin.dictionary.VarneleDictionary
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.utils.JniUtils
@@ -43,6 +44,7 @@ fun MainSettingsScreen(
     onClickLanguage: () -> Unit,
     onClickLayouts: () -> Unit,
     onClickDictionaries: () -> Unit,
+    onClickVarnele: () -> Unit,
     onClickBack: () -> Unit,
 ) {
     SearchSettingsScreen(
@@ -61,6 +63,13 @@ fun MainSettingsScreen(
                     onClick = onClickLanguage,
                     icon = R.drawable.ic_settings_languages
                 ) { NextScreenIcon() }
+                if (Native.available)
+                    Preference(
+                        name = stringResource(R.string.settings_screen_varnele),
+                        description = stringResource(R.string.settings_screen_varnele_summary),
+                        onClick = onClickVarnele,
+                        icon = R.drawable.ic_settings_varnele
+                    ) { NextScreenIcon() }
                 Preference(
                     name = stringResource(R.string.settings_screen_preferences),
                     onClick = onClickPreferences,
@@ -125,7 +134,7 @@ private fun PreviewScreen() {
     initPreview(LocalContext.current)
     Theme(previewDark) {
         Surface {
-            MainSettingsScreen({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+            MainSettingsScreen({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         }
     }
 }

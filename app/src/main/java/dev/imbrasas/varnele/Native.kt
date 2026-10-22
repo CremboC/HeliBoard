@@ -28,6 +28,14 @@ object Native {
         val isValid get() = status != "unknown"
     }
 
+    /**
+     * Formal mode (setting): spoken forms (valgyt, einam) are corrected to the standard ones and
+     * never suggested, typed or swiped. Set from the settings whenever they are loaded.
+     */
+    @Volatile
+    @JvmStatic
+    var formal: Boolean = false
+
     /** False if the library is missing for this CPU type; the keyboard then works without Varnelė. */
     val available: Boolean = try {
         System.loadLibrary("varnele_android")
@@ -41,7 +49,7 @@ object Native {
     private external fun warmUpNative()
 
     @JvmStatic
-    private external fun word(word: String, context: String, keyShift: Boolean): String
+    private external fun word(word: String, context: String, keyShift: Boolean, formal: Boolean): String
 
     @JvmStatic
     private external fun check(text: String, formal: Boolean): String
@@ -49,6 +57,7 @@ object Native {
     @JvmStatic
     private external fun gestureNative(
         xs: FloatArray, ys: FloatArray, keys: String, keyX: FloatArray, keyY: FloatArray, context: String, n: Int,
+        formal: Boolean,
     ): String
 
     /** keys: the letters swiped (no diacritics); best: the likeliest real form of them */
@@ -62,7 +71,7 @@ object Native {
         xs: FloatArray, ys: FloatArray, keys: String, keyX: FloatArray, keyY: FloatArray, context: String, n: Int,
     ): List<GestureCandidate> {
         if (!available) return emptyList()
-        val a = JSONArray(gestureNative(xs, ys, keys, keyX, keyY, context, n))
+        val a = JSONArray(gestureNative(xs, ys, keys, keyX, keyY, context, n, formal))
         return (0 until a.length()).map {
             val c = a.getJSONObject(it)
             GestureCandidate(c.getString("w"), c.getString("best"), c.getDouble("cost"))
@@ -94,7 +103,7 @@ object Native {
     /** The word being typed, with the previous words of the sentence as context. */
     fun check(word: String, context: String = "", keyShift: Boolean = false): WordResult? {
         if (!available) return null
-        val o = JSONObject(word(word, context, keyShift))
+        val o = JSONObject(word(word, context, keyShift, formal))
         fun list(a: JSONArray) = (0 until a.length()).map {
             val c = a.getJSONObject(it)
             Candidate(c.getString("w"), c.getDouble("cost"), c.getDouble("fcost"))

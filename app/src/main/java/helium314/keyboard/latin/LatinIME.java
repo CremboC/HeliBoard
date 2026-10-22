@@ -62,6 +62,7 @@ import helium314.keyboard.latin.common.InputPointers;
 import helium314.keyboard.latin.common.ViewOutlineProviderUtilsKt;
 import helium314.keyboard.latin.define.DebugFlags;
 import helium314.keyboard.latin.inputlogic.InputLogic;
+import helium314.keyboard.latin.inputlogic.VarneleUserLm;
 import helium314.keyboard.latin.personalization.PersonalizationHelper;
 import helium314.keyboard.latin.dictionary.VarneleDictionary;
 import helium314.keyboard.latin.settings.Defaults;
@@ -541,6 +542,7 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onCreate() {
         mSettings.startListener();
+        VarneleUserLm.INSTANCE.init(this);
         KeyboardIconsSet.Companion.getInstance().loadIcons(this);
         mRichImm = RichInputMethodManager.getInstance();
         AudioAndHapticFeedbackManager.init(this);
@@ -853,6 +855,7 @@ public class LatinIME extends InputMethodService implements
 
     private void onStartInputInternal(EditorInfo editorInfo, boolean restarting) {
         super.onStartInput(editorInfo, restarting);
+        VarneleUserLm.INSTANCE.commit(); // a restarted field (some apps do on send) ends the message too
 
         RichInputMethodSubtype subtypeForApp = editorInfo == null
             ? null :
@@ -1042,6 +1045,8 @@ public class LatinIME extends InputMethodService implements
     void onFinishInputInternal() {
         super.onFinishInput();
         Log.i(TAG, "onFinishInput");
+        VarneleUserLm.INSTANCE.commit();
+        VarneleUserLm.INSTANCE.save();
 
         mDictionaryFacilitator.onFinishInput();
         final MainKeyboardView mainKeyboardView = mKeyboardSwitcher.getMainKeyboardView();
@@ -1053,6 +1058,7 @@ public class LatinIME extends InputMethodService implements
     void onFinishInputViewInternal(final boolean finishingInput) {
         super.onFinishInputView(finishingInput);
         Log.i(TAG, "onFinishInputView");
+        VarneleUserLm.INSTANCE.save();
         cleanupInternalStateForFinishInput();
     }
 

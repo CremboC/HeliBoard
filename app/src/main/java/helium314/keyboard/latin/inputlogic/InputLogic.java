@@ -353,6 +353,8 @@ public final class InputLogic {
                 && VarneleSentenceFixer.INSTANCE.isActive(mDictionaryFacilitator.getCurrentLocale())) {
             VarneleSentenceFixer.INSTANCE.apply(mConnection, true);
         }
+        if (!suggestionInfo.isEmoji())
+            VarneleUserLm.INSTANCE.observe(mConnection, settingsValues, mDictionaryFacilitator.getCurrentLocale());
 
         if (suggestionInfo.isEmoji()) {
             RecentEmojis.add(suggestion);
@@ -407,6 +409,9 @@ public final class InputLogic {
         // if all text is gone, we treat it like onStartInput
         if (GestureDataGatheringKt.useBackgroundGathering && newSelStart == 0 && newSelEnd == 0 && !mConnection.hasTextAfterCursor())
             BackgroundGatheringCache.saveOrClear(mLatinIME);
+        // Varnelė: the app cleared the field (a chat's send button): the message is done
+        if (newSelStart == 0 && newSelEnd == 0 && !mConnection.hasTextAfterCursor())
+            VarneleUserLm.INSTANCE.commit();
 
         // TODO: the following is probably better done in resetEntireInputState().
         // it should only happen when the cursor moved, and the very purpose of the
@@ -570,6 +575,7 @@ public final class InputLogic {
                         && VarneleSentenceFixer.INSTANCE.isActive(mDictionaryFacilitator.getCurrentLocale())) {
                     VarneleSentenceFixer.INSTANCE.apply(mConnection);
                 }
+                VarneleUserLm.INSTANCE.observe(mConnection, settingsValues, mDictionaryFacilitator.getCurrentLocale());
             }
         } else if (mConnection.hasSelection()) {
             final CharSequence selectedText = mConnection.getSelectedText(0);
@@ -1258,6 +1264,9 @@ public final class InputLogic {
                 && VarneleSentenceFixer.INSTANCE.apply(mConnection)) {
             inputTransaction.setRequiresUpdateSuggestions();
         }
+        // Varnelė: learn from the text as it ends up, fixes applied (setting)
+        if (wasComposingWord)
+            VarneleUserLm.INSTANCE.observe(mConnection, settingsValues, mDictionaryFacilitator.getCurrentLocale());
 
         inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
     }
@@ -2076,6 +2085,7 @@ public final class InputLogic {
      * @param actionId the action to perform
      */
     private void performEditorAction(final int actionId) {
+        VarneleUserLm.INSTANCE.commit(); // the message is sent: learn its last sentence too
         mConnection.performEditorAction(actionId);
     }
 

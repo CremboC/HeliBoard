@@ -225,6 +225,7 @@ public class SettingsValues {
         mUrlDetectionEnabled = prefs.getBoolean(Settings.PREF_URL_DETECTION, Defaults.PREF_URL_DETECTION);
         mAutoCorrectionEnabledPerUserSettings = prefs.getBoolean(Settings.PREF_AUTO_CORRECTION, Defaults.PREF_AUTO_CORRECTION);
         Native.setFormal(prefs.getBoolean(Settings.PREF_VARNELE_FORMAL, Defaults.PREF_VARNELE_FORMAL));
+        Native.setLearn(prefs.getBoolean(Settings.PREF_VARNELE_LEARN, Defaults.PREF_VARNELE_LEARN));
         mAutoCorrectEnabled = mAutoCorrectionEnabledPerUserSettings
                 && (mInputAttributes.mInputTypeShouldAutoCorrect || prefs.getBoolean(Settings.PREF_MORE_AUTO_CORRECTION, Defaults.PREF_MORE_AUTO_CORRECTION))
                 && (mUrlDetectionEnabled || !InputTypeUtils.isUriOrEmailType(mInputAttributes.mInputType));

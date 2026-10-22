@@ -153,6 +153,12 @@
     <string name="settings_screen_varnele_summary">Lithuanian checking: style and corrections</string>
     <string name="varnele_formal">Formal Lithuanian</string>
     <string name="varnele_formal_summary">Correct spoken forms to standard ones and never suggest them, typed or swiped (valgyt → valgyti, einam → einame)</string>
+    <string name="varnele_learn">Learn from my writing</string>
+    <string name="varnele_learn_summary">Predictions learn the words and phrases you write, as they end up after corrections. Stays on this phone; not in incognito mode, passwords or addresses</string>
+    <string name="varnele_forget">Forget learned words</string>
+    <string name="varnele_forget_summary">Delete everything learned from your writing</string>
+    <string name="varnele_forget_confirm">Delete all words and phrases learned from your writing?</string>
+    <string name="varnele_forget_button">Forget</string>
     <string name="varnele_key_shift">Fix whole-word key slips (Lithuanian)</string>
     <string name="varnele_key_shift_summary">If a word is not recognised at all, try neighbouring keys for every letter (fofrkua → didelis)</string>
     <!-- Option to enable auto correction for for capitalized suggestions (by pressing shift) -->

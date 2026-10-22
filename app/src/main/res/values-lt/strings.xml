@@ -442,5 +442,11 @@
     <string name="settings_screen_varnele">Varnelė</string>
     <string name="settings_screen_varnele_summary">Lietuvių kalbos tikrinimas: stilius ir taisymai</string>
     <string name="varnele_formal">Bendrinė kalba</string>
+    <string name="varnele_learn">Mokytis iš mano rašymo</string>
+    <string name="varnele_learn_summary">Spėjimai išmoksta jūsų rašomus žodžius ir frazes, tokius, kokie lieka po taisymų. Lieka tik šiame telefone; ne inkognito režimu, ne slaptažodžiuose ir adresuose</string>
+    <string name="varnele_forget">Pamiršti išmoktus žodžius</string>
+    <string name="varnele_forget_summary">Ištrinti viską, kas išmokta iš jūsų rašymo</string>
+    <string name="varnele_forget_confirm">Ištrinti visus iš jūsų rašymo išmoktus žodžius ir frazes?</string>
+    <string name="varnele_forget_button">Pamiršti</string>
     <string name="varnele_formal_summary">Šnekamosios formos taisomos į bendrines ir niekada nesiūlomos, rašant ar braukiant (valgyt → valgyti, einam → einame)</string>
 </resources>

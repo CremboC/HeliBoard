@@ -13,6 +13,7 @@ import dev.imbrasas.varnele.Native
 import helium314.keyboard.latin.NgramContext
 import helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo
 import helium314.keyboard.latin.common.ComposedData
+import helium314.keyboard.latin.inputlogic.VarneleUserLm
 import helium314.keyboard.latin.settings.SettingsValuesForSuggestion
 import helium314.keyboard.latin.utils.JniUtils
 import java.util.Locale
@@ -44,6 +45,7 @@ class VarneleDictionary(
             val t = System.nanoTime()
             Native.warmUp()
             Log.i(TAG, "data loaded in ${(System.nanoTime() - t) / 1_000_000} ms")
+            VarneleUserLm.loadNow()
         }.start()
     }
 

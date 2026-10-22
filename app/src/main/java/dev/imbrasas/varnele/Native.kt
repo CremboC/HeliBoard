@@ -36,6 +36,28 @@ object Native {
     @JvmStatic
     var formal: Boolean = false
 
+    /**
+     * Learn from the user's writing (setting): the words and word pairs of the text as it ends up
+     * are learned on the phone and mixed into predictions, the ghost and swipe ranking. Off: the
+     * learned words are neither used nor added to (they stay until forgotten).
+     */
+    @Volatile
+    private var learnSet: Boolean? = null
+
+    @JvmStatic
+    var learn: Boolean
+        get() = learnSet ?: false
+        set(on) {
+            if (learnSet == on) return
+            learnSet = on
+            // not before userLoad (that would load the data for a keyboard not typing Lithuanian),
+            // nor on the thread that reads the settings
+            if (userLoaded) Thread { userEnabledNative(on) }.start()
+        }
+
+    @Volatile
+    private var userLoaded = false
+
     /** False if the library is missing for this CPU type; the keyboard then works without Varnelė. */
     val available: Boolean = try {
         System.loadLibrary("varnele_android")
@@ -83,6 +105,37 @@ object Native {
      */
     fun ghost(context: String, typed: String): String? =
         if (!available) null else ghostNative(context, typed, formal).ifEmpty { null }
+
+    @JvmStatic private external fun userLoadNative(path: String)
+    @JvmStatic private external fun userEnabledNative(on: Boolean)
+    @JvmStatic private external fun userObserveNative(text: String)
+    @JvmStatic private external fun userCommitNative()
+    @JvmStatic private external fun userSaveNative(): Boolean
+    @JvmStatic private external fun userForgetNative()
+    @JvmStatic private external fun userWordsNative(): Int
+
+    /** Load the learned words from [path] (an app-private file) and save them there. */
+    fun userLoad(path: String) {
+        if (!available) return
+        userLoadNative(path)
+        userLoaded = true
+        userEnabledNative(learn)
+    }
+
+    /** The text before the cursor after a finished word, as it ends up: finished sentences are learned. */
+    fun userObserve(text: String) { if (available) userObserveNative(text) }
+
+    /** The message is done (sent, field cleared or left): its last sentence is learned too. */
+    fun userCommit() { if (available) userCommitNative() }
+
+    /** Save the learned words if they changed; false if the file could not be written. */
+    fun userSave(): Boolean = !available || userSaveNative()
+
+    /** Forget all learned words and delete the file. */
+    fun userForget() { if (available) userForgetNative() }
+
+    /** How many words have been learned (old ones count less). */
+    fun userWords(): Int = if (available) userWordsNative() else 0
 
     /** keys: the letters swiped (no diacritics); best: the likeliest real form of them */
     data class GestureCandidate(val keys: String, val best: String, val cost: Double)

@@ -55,16 +55,19 @@ object VarneleUserLm {
     fun observe(connection: RichInputConnection, settings: SettingsValues, locale: Locale) {
         if (!loaded || !mayLearn(settings, locale) || connection.hasSelection()) return
         val text = connection.getTextBeforeCursor(MAX_CONTEXT, 0)?.toString() ?: return
-        Native.userObserve(text)
+        Native.userObserve(text, text.length >= MAX_CONTEXT)
         pending = true
         unsaved = true
     }
 
-    /** The message is done: learn its last sentence. */
-    fun commit() {
+    /**
+     * The message is done: learn its last sentence. [gone]: sent or the field cleared (the same
+     * sentences written again later are learned again); false: the field was left.
+     */
+    fun commit(gone: Boolean) {
         if (!pending) return
         pending = false
-        Native.userCommit()
+        Native.userCommit(gone)
     }
 
     fun save() {

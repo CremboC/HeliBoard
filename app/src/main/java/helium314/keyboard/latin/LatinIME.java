@@ -855,7 +855,7 @@ public class LatinIME extends InputMethodService implements
 
     private void onStartInputInternal(EditorInfo editorInfo, boolean restarting) {
         super.onStartInput(editorInfo, restarting);
-        VarneleUserLm.INSTANCE.commit(); // a restarted field (some apps do on send) ends the message too
+        VarneleUserLm.INSTANCE.commit(false); // a restarted field (some apps do on send) ends the message too
 
         RichInputMethodSubtype subtypeForApp = editorInfo == null
             ? null :
@@ -1045,7 +1045,7 @@ public class LatinIME extends InputMethodService implements
     void onFinishInputInternal() {
         super.onFinishInput();
         Log.i(TAG, "onFinishInput");
-        VarneleUserLm.INSTANCE.commit();
+        VarneleUserLm.INSTANCE.commit(false);
         VarneleUserLm.INSTANCE.save();
 
         mDictionaryFacilitator.onFinishInput();

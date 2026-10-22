@@ -378,11 +378,14 @@ class Suggest(private val mDictionaryFacilitator: DictionaryFacilitator) {
     /** get suggestions based on the current ngram context, with an empty typed word (that's what next word suggestions do)  */
     private fun getNextWordSuggestions(ngramContext: NgramContext, keyboard: Keyboard, inputStyle: Int,
                                        settingsValuesForSuggestion: SettingsValuesForSuggestion): SuggestionResults {
-        val cachedResults = nextWordSuggestionsCache[ngramContext]
+        // Varnelė's predictions change with the whole text before the cursor and what it learned
+        // from the user, not only with the previous words: never cached
+        val varnele = VarneleDictionary.isAvailable(mDictionaryFacilitator.currentLocale)
+        val cachedResults = if (varnele) null else nextWordSuggestionsCache[ngramContext]
         if (cachedResults != null) return cachedResults
         val newResults = mDictionaryFacilitator.getSuggestionResults(ComposedData(InputPointers(1),
             false, ""), ngramContext, keyboard, settingsValuesForSuggestion, SESSION_ID_TYPING, inputStyle)
-        nextWordSuggestionsCache[ngramContext] = newResults
+        if (!varnele) nextWordSuggestionsCache[ngramContext] = newResults
         return newResults
     }
 

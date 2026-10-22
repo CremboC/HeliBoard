@@ -108,8 +108,8 @@ object Native {
 
     @JvmStatic private external fun userLoadNative(path: String)
     @JvmStatic private external fun userEnabledNative(on: Boolean)
-    @JvmStatic private external fun userObserveNative(text: String)
-    @JvmStatic private external fun userCommitNative()
+    @JvmStatic private external fun userObserveNative(text: String, cut: Boolean)
+    @JvmStatic private external fun userCommitNative(gone: Boolean)
     @JvmStatic private external fun userSaveNative(): Boolean
     @JvmStatic private external fun userForgetNative()
     @JvmStatic private external fun userWordsNative(): Int
@@ -122,11 +122,17 @@ object Native {
         userEnabledNative(learn)
     }
 
-    /** The text before the cursor after a finished word, as it ends up: finished sentences are learned. */
-    fun userObserve(text: String) { if (available) userObserveNative(text) }
+    /**
+     * The text before the cursor after a finished word, as it ends up: finished sentences are
+     * learned. [cut]: the text is the end of a longer one (its first sentence may be a piece).
+     */
+    fun userObserve(text: String, cut: Boolean) { if (available) userObserveNative(text, cut) }
 
-    /** The message is done (sent, field cleared or left): its last sentence is learned too. */
-    fun userCommit() { if (available) userCommitNative() }
+    /**
+     * The message is done: its last sentence is learned too. [gone]: sent or the field cleared, so
+     * the same text can't be seen again; otherwise the field was left (it may be refocused).
+     */
+    fun userCommit(gone: Boolean) { if (available) userCommitNative(gone) }
 
     /** Save the learned words if they changed; false if the file could not be written. */
     fun userSave(): Boolean = !available || userSaveNative()

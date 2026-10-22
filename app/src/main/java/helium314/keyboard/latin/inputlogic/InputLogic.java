@@ -411,7 +411,7 @@ public final class InputLogic {
             BackgroundGatheringCache.saveOrClear(mLatinIME);
         // Varnelė: the app cleared the field (a chat's send button): the message is done
         if (newSelStart == 0 && newSelEnd == 0 && !mConnection.hasTextAfterCursor())
-            VarneleUserLm.INSTANCE.commit();
+            VarneleUserLm.INSTANCE.commit(true);
 
         // TODO: the following is probably better done in resetEntireInputState().
         // it should only happen when the cursor moved, and the very purpose of the
@@ -2085,7 +2085,7 @@ public final class InputLogic {
      * @param actionId the action to perform
      */
     private void performEditorAction(final int actionId) {
-        VarneleUserLm.INSTANCE.commit(); // the message is sent: learn its last sentence too
+        VarneleUserLm.INSTANCE.commit(true); // the message is sent: learn its last sentence too
         mConnection.performEditorAction(actionId);
     }
 

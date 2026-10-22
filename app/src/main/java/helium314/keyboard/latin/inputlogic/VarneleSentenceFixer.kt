@@ -16,12 +16,16 @@ import java.util.Locale
  *    "žodžių kuriu aš rašau" -> "kurių", "prieš pora dienų" -> "porą"
  *  - missing commas before clause starters: "sakė kad" -> "sakė, kad"
  * Only changes that add or swap diacritics (same letters otherwise) and commas are
- * applied automatically; anything else stays a suggestion. Commas and earlier words each have
- * a setting; the word just finished is always fixed (it is autocorrect's job too).
+ * applied automatically, and the phrase rule's re-inflections: a word that doesn't agree with
+ * the rest of its phrase ("viena nukritusią sagutė" -> "nukritusi"); anything else stays a
+ * suggestion. Commas and earlier words each have a setting; the word just finished is always
+ * fixed (it is autocorrect's job too).
  */
 object VarneleSentenceFixer {
     private const val TAG = "Varnele"
-    private val SAFE_RULES = setOf("case", "agreement", "quantity", "negation", "relative", "object", "subject")
+    private val SAFE_RULES = setOf("case", "agreement", "quantity", "negation", "relative", "object", "subject", "phrase")
+    /** rules whose fixes of earlier words may change letters, not only diacritics */
+    private val LETTER_RULES = setOf("phrase")
     private const val MAX_CONTEXT = 400
 
     fun isActive(locale: Locale) = locale.language == "lt" && Native.available
@@ -73,7 +77,7 @@ object VarneleSentenceFixer {
                 } else if (f.rule in SAFE_RULES) {
                     if (!settings.mVarneleFixEarlier && f.start < lastWordStart) continue
                     val s = f.suggestions.firstOrNull() ?: continue
-                    if (s != f.word && s.length == f.word.length && fold(s) == fold(f.word)) {
+                    if (s != f.word && (f.rule in LETTER_RULES || s.length == f.word.length && fold(s) == fold(f.word))) {
                         sb.replace(f.start, f.end, s)
                         changed = true
                     }

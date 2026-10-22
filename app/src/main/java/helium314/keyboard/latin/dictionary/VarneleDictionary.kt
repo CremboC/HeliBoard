@@ -337,7 +337,8 @@ class VarneleDictionary(
          * diacritics, or the subject rule's verb form right after a personal pronoun
          * (aš buvo -> buvau), which is almost never intended, or a never-seen short word one
          * key from a common one (kak -> kai), or in formal mode the standard form of a spoken
-         * one (valgyt -> valgyti).
+         * one (valgyt -> valgyti), or the word of a phrase that doesn't agree with the rest of it
+         * (viena nukritusią sagutė -> nukritusi).
          */
         private fun isSure(r: Native.WordResult, i: Int): Boolean {
             val c = r.contextFixes.getOrNull(i) ?: return false
@@ -345,7 +346,7 @@ class VarneleDictionary(
         }
 
         /** context rules whose first fix may change letters, not only diacritics */
-        val SURE_RULES = setOf("subject", "rare", "formal")
+        val SURE_RULES = setOf("subject", "rare", "formal", "phrase")
 
         /** context (a grammar rule) already chose the order, or the top suggestion clearly wins */
         private fun isClearlyBest(r: Native.WordResult): Boolean {

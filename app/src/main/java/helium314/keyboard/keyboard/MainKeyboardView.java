@@ -44,6 +44,7 @@ import helium314.keyboard.keyboard.internal.NonDistinctMultitouchHelper;
 import helium314.keyboard.keyboard.internal.SlidingKeyInputDrawingPreview;
 import helium314.keyboard.keyboard.internal.TimerHandler;
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode;
+import helium314.keyboard.latin.dictionary.VarneleDictionary;
 import helium314.keyboard.latin.R;
 import helium314.keyboard.latin.RichInputMethodSubtype;
 import helium314.keyboard.latin.SuggestedWords;
@@ -309,6 +310,7 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         mKeyDetector.setKeyboard(
                 keyboard, -getPaddingLeft(), -getPaddingTop() + getVerticalCorrection());
         PointerTracker.setKeyDetector(mKeyDetector);
+        VarneleDictionary.setGestureKeyboard(keyboard, -getPaddingLeft(), -getPaddingTop() + getVerticalCorrection());
         mPopupKeysKeyboardCache.clear();
 
         mSpaceKey = keyboard.getKey(Constants.CODE_SPACE);

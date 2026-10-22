@@ -171,8 +171,21 @@ dependencies {
 // ---------------------------------------------------------------------------
 fun varneleDir(): File = File((project.findProperty("varnele.dir") as String?) ?: "${rootDir}/../varnele")
 
+val cargoBuildVarneleHost by tasks.registering(Exec::class) {
+    description = "Build the varnele binary for this computer: the export builds its count tables with it"
+    val dir = varneleDir()
+    val data = File(dir, "data/varnele.bin")
+    onlyIf { dir.isDirectory && !data.exists() }
+    workingDir = File(dir, "rust")
+    val tmp = layout.buildDirectory.dir("tmp/cargo").get().asFile
+    environment("TMPDIR", tmp.absolutePath)
+    doFirst { tmp.mkdirs() }
+    commandLine("${System.getProperty("user.home")}/.cargo/bin/cargo", "build", "--release", "-p", "varnele")
+}
+
 val exportVarneleData by tasks.registering(Exec::class) {
     description = "Compile Varnelė's grammar into data/varnele.bin"
+    dependsOn(cargoBuildVarneleHost)
     val dir = varneleDir()
     val data = File(dir, "data/varnele.bin")
     workingDir = dir

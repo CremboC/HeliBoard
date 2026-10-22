@@ -562,6 +562,12 @@ public final class InputLogic {
                         handler);
             } else {
                 commitTyped(settingsValues, LastComposedWord.NOT_A_SEPARATOR);
+                // Varnelė (Lithuanian): no separator is typed between gestures, so the previous
+                // gesture's word is finished here: fix it and the earlier words and commas it reveals
+                if (settingsValues.mAutoCorrectEnabled
+                        && VarneleSentenceFixer.INSTANCE.isActive(mDictionaryFacilitator.getCurrentLocale())) {
+                    VarneleSentenceFixer.INSTANCE.apply(mConnection);
+                }
             }
         } else if (mConnection.hasSelection()) {
             final CharSequence selectedText = mConnection.getSelectedText(0);

@@ -7,12 +7,14 @@ import android.text.Spanned
 import android.text.style.SuggestionSpan
 import android.util.Log
 import android.util.LruCache
+import helium314.keyboard.keyboard.Keyboard
 import helium314.keyboard.latin.BuildConfig
 import dev.imbrasas.varnele.Native
 import helium314.keyboard.latin.NgramContext
 import helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo
 import helium314.keyboard.latin.common.ComposedData
 import helium314.keyboard.latin.settings.SettingsValuesForSuggestion
+import helium314.keyboard.latin.utils.JniUtils
 import java.util.Locale
 
 /**
@@ -56,8 +58,8 @@ class VarneleDictionary(
     ): ArrayList<SuggestedWordInfo> {
         val out = ArrayList<SuggestedWordInfo>()
         val typed = composedData.mTypedWord
-        // gesture typing needs key geometry, which the binary dictionaries handle
-        if (composedData.mIsBatchMode || typed.isEmpty()) return out
+        if (composedData.mIsBatchMode) return gestureSuggestions(composedData, ngramContext)
+        if (typed.isEmpty()) return out
         val context = previousWords(ngramContext)
         val t = System.nanoTime()
         val r = Native.check(typed, context, keyShiftEnabled()) ?: return out
@@ -101,6 +103,41 @@ class VarneleDictionary(
             out.add(info(c.word, sc, kind))
         }
         return out
+    }
+
+    /**
+     * A swipe: Varnelė's gesture search finds the keys swiped (no diacritics), then each is
+     * checked like a word typed without diacritics, with the words before it, to choose its
+     * diacritics (pries -> prieš, dienu -> dienų). The first one is committed.
+     */
+    private fun gestureSuggestions(composedData: ComposedData, ngramContext: NgramContext): ArrayList<SuggestedWordInfo> {
+        val out = ArrayList<SuggestedWordInfo>()
+        val geometry = gestureGeometry ?: return out
+        val pointers = composedData.mInputPointers
+        val n = pointers.pointerSize
+        if (n == 0) return out
+        val px = pointers.xCoordinates
+        val py = pointers.yCoordinates
+        val xs = FloatArray(n) { (px[it] + geometry.offsetX) / geometry.unit }
+        val ys = FloatArray(n) { (py[it] + geometry.offsetY) / geometry.unit }
+        val context = previousWords(ngramContext)
+        val t = System.nanoTime()
+        val candidates = Native.gesture(xs, ys, geometry.keys, geometry.keyX, geometry.keyY, context, GESTURE_CANDIDATES)
+        val words = LinkedHashSet<String>()
+        for (c in candidates) words.add(withDiacritics(c, context))
+        if (BuildConfig.DEBUG) Log.d(TAG, "gesture '$context' + $n points: ${candidates.take(3).map { it.keys }} -> " +
+            "${words.take(3)} ${(System.nanoTime() - t) / 1000} µs")
+        words.forEachIndexed { i, w -> out.add(info(w, GESTURE_SCORE - i * 1000, SuggestedWordInfo.KIND_CORRECTION)) }
+        return out
+    }
+
+    /** As typing the keys without diacritics would: a diacritic-only context fix of a valid word
+     *  (metu -> metų, rare twins), else the word itself; for an unknown word its best diacritic-only
+     *  suggestion, else the gesture search's own best form. */
+    private fun withDiacritics(c: Native.GestureCandidate, context: String): String {
+        val r = Native.check(c.keys, context) ?: return c.best
+        if (r.isValid) return r.contextFixes.firstOrNull { it.diacriticOnly }?.word ?: c.keys
+        return r.suggestions.firstOrNull { it.diacriticOnly }?.word ?: c.best
     }
 
     override fun isInDictionary(word: String): Boolean {
@@ -163,12 +200,58 @@ class VarneleDictionary(
         return prev[b.length]
     }
 
+    /** The letter keys of the keyboard on screen, for gestures, in key widths. */
+    private class GestureGeometry(
+        val keys: String, val keyX: FloatArray, val keyY: FloatArray, val unit: Float, val offsetX: Float, val offsetY: Float,
+    )
+
     companion object {
+        @Volatile
+        private var gestureGeometry: GestureGeometry? = null
+
+        /**
+         * The keyboard shown (MainKeyboardView.setKeyboard): gesture points are in view coordinates,
+         * keys in keyboard coordinates, [offsetX]/[offsetY] (as given to the key detector) turn one into the other.
+         */
+        @JvmStatic
+        fun setGestureKeyboard(keyboard: Keyboard, offsetX: Float, offsetY: Float) {
+            val unit = keyboard.mMostCommonKeyWidth.toFloat()
+            if (unit <= 0f) return
+            val keys = StringBuilder()
+            val kx = ArrayList<Float>()
+            val ky = ArrayList<Float>()
+            for (key in keyboard.sortedKeys) {
+                val c = key.code
+                if (c !in 'A'.code..'Z'.code && c !in 'a'.code..'z'.code) continue
+                val letter = c.toChar().lowercaseChar()
+                if (keys.indexOf(letter) >= 0) continue
+                keys.append(letter)
+                kx.add((key.x + key.width / 2f) / unit)
+                ky.add((key.y + key.height / 2f) / unit)
+            }
+            gestureGeometry = GestureGeometry(keys.toString(), kx.toFloatArray(), ky.toFloatArray(), unit, offsetX, offsetY)
+            // view coordinates of the key centres, for replaying swipes with adb shell input motionevent
+            if (BuildConfig.DEBUG) Log.d(TAG, "gesture keys (view px): " + keys.indices.joinToString(" ") {
+                "${keys[it]}=${(kx[it] * unit - offsetX).toInt()},${(ky[it] * unit - offsetY).toInt()}"
+            })
+        }
+
+        /** Gesture typing works with Google's library (any language) or Varnelė (Lithuanian). */
+        @JvmStatic
+        fun gesturesFor(locale: Locale) = JniUtils.sHaveGestureLib || (Native.available && locale.language == "lt")
+
+        /** For the settings screens: gesture typing can work for some language. */
+        @JvmStatic
+        val gesturesAvailable get() = JniUtils.sHaveGestureLib || Native.available
+
+
         private const val TAG = "Varnele"
         private const val VALID_SCORE = 1_200_000
         private const val CONTEXT_FIX_SCORE = 1_300_000   // above the typed word: autocorrects
         private const val CONTEXT_HINT_SCORE = 1_100_000  // below it: shown, not applied
         private const val CLEAR_MARGIN = 0.08
+        private const val GESTURE_CANDIDATES = 5
+        private const val GESTURE_SCORE = 1_000_000  // gesture suggestions keep Varnelė's order
         private const val WHITELIST_FLOOR = 1_300_000
         // every letter differs, so HeliBoard's distance weight is tiny: needs a large raw score
         private const val KEY_SLIP_SCORE = 1_900_000_000

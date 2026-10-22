@@ -46,6 +46,29 @@ object Native {
     @JvmStatic
     private external fun check(text: String, formal: Boolean): String
 
+    @JvmStatic
+    private external fun gestureNative(
+        xs: FloatArray, ys: FloatArray, keys: String, keyX: FloatArray, keyY: FloatArray, context: String, n: Int,
+    ): String
+
+    /** keys: the letters swiped (no diacritics); best: the likeliest real form of them */
+    data class GestureCandidate(val keys: String, val best: String, val cost: Double)
+
+    /**
+     * The words a swipe may spell, best first. The path and the key centres (letters in [keys],
+     * centres in [keyX]/[keyY]) are divided by the key width; [context] is the text before the word.
+     */
+    fun gesture(
+        xs: FloatArray, ys: FloatArray, keys: String, keyX: FloatArray, keyY: FloatArray, context: String, n: Int,
+    ): List<GestureCandidate> {
+        if (!available) return emptyList()
+        val a = JSONArray(gestureNative(xs, ys, keys, keyX, keyY, context, n))
+        return (0 until a.length()).map {
+            val c = a.getJSONObject(it)
+            GestureCandidate(c.getString("w"), c.getString("best"), c.getDouble("cost"))
+        }
+    }
+
     /** A problem in a text; offsets are UTF-16 indices into it. */
     data class Finding(
         val start: Int, val end: Int, val word: String, val rule: String, val suggestions: List<String>,

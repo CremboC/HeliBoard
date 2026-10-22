@@ -260,6 +260,11 @@ public final class BinaryDictionary extends Dictionary {
                 session.mIsBeginningOfSentenceArray);
         final InputPointers inputPointers = composedData.mInputPointers;
         final boolean isGesture = composedData.mIsBatchMode;
+        // Varnelė fork: gestures without Google's library are Varnelė's (VarneleDictionary); the
+        // native gesture search has no policy then and would crash
+        if (isGesture && !JniUtils.sHaveGestureLib) {
+            return null;
+        }
         final int inputSize;
         if (!isGesture) {
             inputSize =

@@ -11,6 +11,13 @@ Fork-specific files (everything else is upstream HeliBoard):
 - app/src/main/java/helium314/keyboard/latin/dictionary/VarneleDictionary.kt
 - app/src/main/java/helium314/keyboard/latin/inputlogic/VarneleSentenceFixer.kt
 - hooks: DictionaryFactory.getMainDictsForLocale, InputLogic.handleSeparatorEvent (end)
+- swipe (Varnelė's gesture decoder, no Google library needed for Lithuanian): MainKeyboardView.setKeyboard
+  (key centres to VarneleDictionary.setGestureKeyboard), InputLogic.onStartBatchInput (sentence fixer after
+  the previous gesture's word), BinaryDictionary.getSuggestions (declines gestures without the library: the
+  native gesture policy is null), SettingsValues.mGestureInputEnabled + the gesture settings screens
+  (VarneleDictionary.gesturesFor / gesturesAvailable instead of JniUtils.sHaveGestureLib)
+- app/build.gradle.kts: cargoBuildVarneleHost builds the host `varnele` binary before the export
+  (the export builds its count tables with `varnele fst`)
 - app/build.gradle.kts: exportVarneleData + cargoBuildVarnele tasks; proguard keep rule
 
 Remotes: `origin` = upstream HeliBorg/HeliBoard (pull only, never push); `fork` =

@@ -86,6 +86,8 @@ public final class InputLogic {
     private static final String TAG = InputLogic.class.getSimpleName();
     private static final char INLINE_EMOJI_SEARCH_MARKER = ':';
     private static final int[] EMPTY_CODE_POINTS = new int[0];
+    // the connection's cache holds this much: more would ask the app on every keystroke
+    private static final int VARNELE_CONTEXT_CHARS = Constants.EDITOR_CONTENTS_CACHE_SIZE;
 
     // TODO : Remove this member when we can.
     final LatinIME mLatinIME;
@@ -2509,6 +2511,17 @@ public final class InputLogic {
         return true;
     }
 
+    /** The text before the word being typed, up to a paragraph, for Varnelė's predictions. */
+    private String varneleTextBefore() {
+        final CharSequence before = mConnection.getTextBeforeCursor(VARNELE_CONTEXT_CHARS, 0);
+        if (before == null) return "";
+        String text = before.toString();
+        final String typed = mWordComposer.getTypedWord();
+        if (mWordComposer.isComposingWord() && text.endsWith(typed))
+            text = text.substring(0, text.length() - typed.length());
+        return text;
+    }
+
     // we used to provide keyboard, settingsValues and keyboardShiftMode, but every time read it from current instance anyway
     void getSuggestedWords(final int inputStyle, final int sequenceNumber, final OnGetSuggestedWordsCallback callback) {
         final Keyboard keyboard = KeyboardSwitcher.getInstance().getKeyboard();
@@ -2524,6 +2537,8 @@ public final class InputLogic {
         final SettingsValues settingsValues = Settings.getValues();
         mWordComposer.adviseCapitalizedModeBeforeFetchingSuggestions(
                 getActualCapsMode(settingsValues, KeyboardSwitcher.getInstance().getKeyboardCapsMode()));
+        if (VarneleDictionary.Companion.isAvailable(getDictionaryFacilitatorLocale()))
+            VarneleDictionary.setTextBefore(varneleTextBefore());
         try {
             SuggestedWords suggestedWords = mSuggest.getSuggestedWords(mWordComposer.copy(),
                     getNgramContextFromNthPreviousWordForSuggestion(

@@ -60,6 +60,30 @@ object Native {
         formal: Boolean,
     ): String
 
+    @JvmStatic
+    private external fun predictNative(context: String, prefix: String, n: Int, formal: Boolean): String
+
+    /**
+     * The words likeliest to come next after [context] (the text before the word, up to a
+     * paragraph), with their probability, likeliest first. With a [prefix] (typed with or
+     * without diacritics) only the words it begins, longer than it: completions.
+     */
+    fun predict(context: String, prefix: String, n: Int): List<Pair<String, Double>> {
+        if (!available) return emptyList()
+        val a = JSONArray(predictNative(context, prefix, n, formal))
+        return (0 until a.length()).map { a.getJSONObject(it).let { o -> o.getString("w") to o.getDouble("p") } }
+    }
+
+    @JvmStatic
+    private external fun ghostNative(context: String, typed: String, formal: Boolean): String
+
+    /**
+     * The ghost for the word being typed after [context]: its completion (kod -> kodėl), maybe
+     * with the next word; null when nothing completes it or the word as typed is likelier.
+     */
+    fun ghost(context: String, typed: String): String? =
+        if (!available) null else ghostNative(context, typed, formal).ifEmpty { null }
+
     /** keys: the letters swiped (no diacritics); best: the likeliest real form of them */
     data class GestureCandidate(val keys: String, val best: String, val cost: Double)
 

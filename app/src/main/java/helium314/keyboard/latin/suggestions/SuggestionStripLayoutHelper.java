@@ -24,6 +24,7 @@ import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.style.CharacterStyle;
+import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.text.style.UnderlineSpan;
 import android.util.AttributeSet;
@@ -44,6 +45,7 @@ import helium314.keyboard.latin.SuggestedWords;
 import helium314.keyboard.latin.SuggestedWords.SuggestedWordInfo;
 import helium314.keyboard.latin.common.ColorType;
 import helium314.keyboard.latin.common.Colors;
+import helium314.keyboard.latin.dictionary.VarneleDictionary;
 import helium314.keyboard.latin.settings.Settings;
 import helium314.keyboard.latin.settings.SettingsValues;
 import helium314.keyboard.latin.utils.ResourceUtils;
@@ -87,6 +89,7 @@ final class SuggestionStripLayoutHelper {
     private static final String MORE_SUGGESTIONS_HINT = "…";
 
     private static final CharacterStyle BOLD_SPAN = new StyleSpan(Typeface.BOLD);
+    private static final float GHOST_ALPHA = 0.5f;
     private static final CharacterStyle UNDERLINE_SPAN = new UnderlineSpan();
 
     private final int mSuggestionStripOptions;
@@ -192,6 +195,15 @@ final class SuggestionStripLayoutHelper {
             return null;
         }
         final String word = suggestedWords.getLabel(indexInSuggestedWords);
+        if (VarneleDictionary.isGhost(suggestedWords.getInfo(indexInSuggestedWords))) {
+            // Varnelė's ghost: the letters typed as usual, what tapping it would add greyed (kod|ėl tu)
+            final SuggestedWordInfo typed = suggestedWords.mTypedWordInfo;
+            final int start = Math.min(typed == null ? 0 : typed.mWord.length(), word.length());
+            final Spannable spannedWord = new SpannableString(word);
+            spannedWord.setSpan(new ForegroundColorSpan(applyAlpha(mColorSuggested, GHOST_ALPHA)),
+                    start, word.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            return spannedWord;
+        }
         // TODO: don't use the index to decide whether this is the auto-correction/typed word, as
         // this is brittle
         final boolean isAutoCorrection = suggestedWords.mWillAutoCorrect

@@ -59,7 +59,7 @@ class VarneleDictionary(
         val out = ArrayList<SuggestedWordInfo>()
         val typed = composedData.mTypedWord
         if (composedData.mIsBatchMode) return gestureSuggestions(composedData, ngramContext)
-        if (typed.isEmpty()) return out
+        if (typed.isEmpty()) return predictions(ngramContext)
         val context = previousWords(ngramContext)
         val t = System.nanoTime()
         val r = Native.check(typed, context, keyShiftEnabled()) ?: return out
@@ -102,6 +102,21 @@ class VarneleDictionary(
             previous = sc
             out.add(info(c.word, sc, kind))
         }
+        return out
+    }
+
+    /**
+     * Next-word predictions, before a letter is typed: Varnelė's language model on the text before
+     * the cursor (the previous word and the paragraph's topic), in its order.
+     */
+    private fun predictions(ngramContext: NgramContext): ArrayList<SuggestedWordInfo> {
+        val out = ArrayList<SuggestedWordInfo>()
+        val context = textBefore.ifEmpty { previousWords(ngramContext) }
+        val t = System.nanoTime()
+        val words = Native.predict(context, "", PREDICTIONS)
+        if (BuildConfig.DEBUG) Log.d(TAG, "predict '${context.takeLast(40)}': ${words.map { it.first }} " +
+            "${(System.nanoTime() - t) / 1000} µs")
+        words.forEachIndexed { i, (w, _) -> out.add(info(w, PREDICTION_SCORE - i * 1000, SuggestedWordInfo.KIND_PREDICTION)) }
         return out
     }
 
@@ -210,6 +225,35 @@ class VarneleDictionary(
         private var gestureGeometry: GestureGeometry? = null
 
         /**
+         * The text before the word being typed (InputLogic sets it before asking for suggestions):
+         * predictions use the whole paragraph, the NgramContext has only three words.
+         */
+        @Volatile
+        @JvmStatic
+        var textBefore: String = ""
+
+        /** Marks the ghost in the strip (SuggestionStripLayoutHelper greys its completed part). */
+        @JvmField
+        val GHOST: Dictionary = Dictionary.PhonyDictionary("varnele_ghost")
+
+        /**
+         * The ghost: the word being typed completed (kod -> kodėl), and the next word too when the
+         * language model is nearly sure of it (Rust `keyboard_ghost`). Shown in the strip, committed
+         * only when tapped. Null if nothing completes [typed] or [typed] itself is likelier.
+         */
+        @JvmStatic
+        fun ghost(typed: String): String? {
+            if (typed.isEmpty() || !typed.all { it.isLetter() }) return null
+            val t = System.nanoTime()
+            val ghost = Native.ghost(textBefore, typed)
+            if (BuildConfig.DEBUG) Log.d(TAG, "ghost '$typed': $ghost ${(System.nanoTime() - t) / 1000} µs")
+            return ghost
+        }
+
+        @JvmStatic
+        fun isGhost(info: SuggestedWordInfo) = info.mSourceDict === GHOST
+
+        /**
          * The keyboard shown (MainKeyboardView.setKeyboard): gesture points are in view coordinates,
          * keys in keyboard coordinates, [offsetX]/[offsetY] (as given to the key detector) turn one into the other.
          */
@@ -251,6 +295,8 @@ class VarneleDictionary(
         private const val CONTEXT_HINT_SCORE = 1_100_000  // below it: shown, not applied
         private const val CLEAR_MARGIN = 0.08
         private const val GESTURE_CANDIDATES = 5
+        private const val PREDICTIONS = 5
+        private const val PREDICTION_SCORE = 1_000_000  // predictions keep Varnelė's order
         private const val GESTURE_SCORE = 1_000_000  // gesture suggestions keep Varnelė's order
         private const val WHITELIST_FLOOR = 1_300_000
         // every letter differs, so HeliBoard's distance weight is tiny: needs a large raw score

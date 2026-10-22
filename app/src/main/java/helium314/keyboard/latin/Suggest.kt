@@ -100,8 +100,10 @@ class Suggest(private val mDictionaryFacilitator: DictionaryFacilitator) {
             {
                 val first = suggestionsContainer.firstOrNull() ?: suggestionResults.first()
                 val suggestions = getNextWordSuggestions(ngramContext, keyboard, inputStyleIfNotPrediction, settingsValuesForSuggestion)
-                val suggestionForFirstInContainer = suggestions.firstOrNull { it.mWord == first.word }
-                val suggestionForTypedWord = suggestions.firstOrNull { it.mWord == capitalizedTypedWord }
+                // Varnelė's predictions are not on this scale; they never took part in autocorrect
+                val scored = suggestions.filter { it.mSourceDict !is VarneleDictionary }
+                val suggestionForFirstInContainer = scored.firstOrNull { it.mWord == first.word }
+                val suggestionForTypedWord = scored.firstOrNull { it.mWord == capitalizedTypedWord }
                 suggestionForFirstInContainer to suggestionForTypedWord
             },
             isCorrectionEnabled,
@@ -135,11 +137,11 @@ class Suggest(private val mDictionaryFacilitator: DictionaryFacilitator) {
         val correctToCapitalizedWord = typedWordWasCapitalized && isCorrectionEnabled && Settings.getValues().mAutoCorrectCapitalizedSuggestion
             && !wordComposer.isCursorFrontOrMiddleOfComposingWord && typedWordString.drop(1).none { it.isUpperCase() }
         val indexOfTypedWord = 1 + if (hasAutoCorrection) SuggestedWords.INDEX_OF_AUTO_CORRECTION else SuggestedWords.INDEX_OF_TYPED_WORD
-        if (
-            (hasAutoCorrection
+        val showsTypedWord = (hasAutoCorrection
                 || (Settings.getValues().mCenterSuggestionTextToEnter && !wordComposer.isResumed)
                 || typedWordWasCapitalized
-            ) && suggestionsList.size >= indexOfTypedWord && capitalizedTypedWord.isNotEmpty()) {
+            ) && suggestionsList.size >= indexOfTypedWord && capitalizedTypedWord.isNotEmpty()
+        if (showsTypedWord) {
             if (typedWordFirstOccurrenceWordInfo != null) {
                 addDebugInfo(typedWordFirstOccurrenceWordInfo, capitalizedTypedWord)
                 suggestionsList.add(indexOfTypedWord, typedWordFirstOccurrenceWordInfo)
@@ -150,9 +152,26 @@ class Suggest(private val mDictionaryFacilitator: DictionaryFacilitator) {
                 )
             }
         }
+        if (!resultsArePredictions && VarneleDictionary.isAvailable(mDictionaryFacilitator.mainLocale))
+            addVarneleGhost(suggestionsList, typedWordString, capsMode, if (showsTypedWord) indexOfTypedWord + 1 else 1)
         val isTypedWordValid = firstOccurrenceOfTypedWordInSuggestions > -1 || (!resultsArePredictions && !allowsToBeAutoCorrected)
         return SuggestedWords(suggestionsList, suggestionResults.mRawSuggestions, typedWordInfo,
             isTypedWordValid, hasAutoCorrection || correctToCapitalizedWord, false, inputStyle, sequenceNumber)
+    }
+
+    /**
+     * Varnelė's ghost (the word completed, maybe with the next word: kod -> kodėl tu) goes in the
+     * centre of the strip, or next to what the centre shows when that is what space will commit (an
+     * autocorrection, or the typed word with "center suggestion is text to enter"). It is added
+     * after the autocorrect decision and never takes part in it: only a tap commits it.
+     */
+    private fun addVarneleGhost(suggestions: ArrayList<SuggestedWordInfo>, typed: String, capsMode: CapsMode, at: Int) {
+        val ghost = VarneleDictionary.ghost(typed) ?: return
+        val word = capitalize(ghost, capsMode, mDictionaryFacilitator.mainLocale)
+        if (at > 1 && suggestions.getOrNull(1)?.mWord == word) return   // the centre shows it already
+        suggestions.removeAll { it.mWord == word && !it.isKindOf(SuggestedWordInfo.KIND_TYPED) }
+        suggestions.add(at.coerceAtMost(suggestions.size), SuggestedWordInfo(word, "", 0, SuggestedWordInfo.KIND_PREDICTION,
+            VarneleDictionary.GHOST, SuggestedWordInfo.NOT_AN_INDEX, SuggestedWordInfo.NOT_A_CONFIDENCE))
     }
 
     // returns [allowsToBeAutoCorrected, hasAutoCorrection]

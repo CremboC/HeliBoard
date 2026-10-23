@@ -71,7 +71,7 @@ object Native {
     private external fun warmUpNative()
 
     @JvmStatic
-    private external fun word(word: String, context: String, keyShift: Boolean, formal: Boolean): String
+    private external fun word(word: String, context: String, after: String, keyShift: Boolean, formal: Boolean): String
 
     @JvmStatic
     private external fun check(text: String, formal: Boolean): String
@@ -198,10 +198,13 @@ object Native {
         if (available) warmUpNative()
     }
 
-    /** The word being typed, with the previous words of the sentence as context. */
-    fun check(word: String, context: String = "", keyShift: Boolean = false): WordResult? {
+    /**
+     * The word being typed, with the previous words of the sentence as context. Inside a sentence
+     * [after] is the rest of it (and [context] the sentence before the word): the words after it decide too.
+     */
+    fun check(word: String, context: String = "", keyShift: Boolean = false, after: String = ""): WordResult? {
         if (!available) return null
-        val o = JSONObject(word(word, context, keyShift, formal))
+        val o = JSONObject(word(word, context, after, keyShift, formal))
         fun list(a: JSONArray) = (0 until a.length()).map {
             val c = a.getJSONObject(it)
             Candidate(c.getString("w"), c.getDouble("cost"), c.getDouble("fcost"))

@@ -63,11 +63,15 @@ class VarneleDictionary(
         val typed = composedData.mTypedWord
         if (composedData.mIsBatchMode) return gestureSuggestions(composedData, ngramContext)
         if (typed.isEmpty()) return predictions(ngramContext)
-        val context = previousWords(ngramContext)
+        // a word inside a sentence (typed or touched with the cursor back in the text): the words
+        // after it decide too ("kad žiema žymiai rimtesne| negu" -> rimtesnė)
+        val sentence = sentenceAround()
+        val context = sentence?.first ?: previousWords(ngramContext)
+        val after = sentence?.second ?: ""
         val t = System.nanoTime()
-        val r = Native.check(typed, context, keyShiftEnabled()) ?: return out
+        val r = Native.check(typed, context, keyShiftEnabled(), after) ?: return out
         validCache.put(typed, r.isValid)
-        if (BuildConfig.DEBUG) Log.d(TAG, "'$context' + '$typed': ${r.status} " +
+        if (BuildConfig.DEBUG) Log.d(TAG, "'${context.takeLast(60)}' + '$typed' + '$after': ${r.status} " +
             "fix=${r.contextFixes.map { it.word }} sugg=${r.suggestions.take(3).map { it.word }} " +
             "${(System.nanoTime() - t) / 1000} µs")
 
@@ -80,6 +84,7 @@ class VarneleDictionary(
                     else info(c.word, CONTEXT_HINT_SCORE - i, SuggestedWordInfo.KIND_CORRECTION)
                 )
             }
+            addResumed(typed, out)
             return out
         }
 
@@ -105,7 +110,39 @@ class VarneleDictionary(
             previous = sc
             out.add(info(c.word, sc, kind))
         }
+        addResumed(typed, out)
         return out
+    }
+
+    /**
+     * The sentence around the word being typed when it goes on after the word: the sentence before
+     * it and the rest after it (up to its full stop). Null at the end of a sentence.
+     */
+    private fun sentenceAround(): Pair<String, String>? {
+        val after = textAfter
+        var end = 0
+        while (end < after.length && after[end] !in SENTENCE_ENDS) end++
+        if (end < after.length) end++   // the full stop too: "Mama didelė." ends the clause
+        val rest = after.substring(0, end)
+        if (rest.none { it.isLetter() }) return null
+        val before = textBefore
+        var start = before.length
+        while (start > 0 && before[start - 1] !in SENTENCE_ENDS) start--
+        return before.substring(start) to rest
+    }
+
+    /** A word touched by the cursor: what its spans offered (autocorrect's typed word) after Varnelė's own. */
+    private fun addResumed(typed: String, out: ArrayList<SuggestedWordInfo>) {
+        val (word, words) = resumed ?: return
+        if (word != typed) {
+            resumed = null   // the word was edited
+            return
+        }
+        var sc = (out.minOfOrNull { it.mScore } ?: VALID_SCORE) - 1
+        for (w in words) {
+            if (out.none { it.mWord == w }) out.add(info(w, sc.coerceAtLeast(1), SuggestedWordInfo.KIND_CORRECTION))
+            sc--
+        }
     }
 
     /**
@@ -234,6 +271,22 @@ class VarneleDictionary(
         @Volatile
         @JvmStatic
         var textBefore: String = ""
+
+        /** The text after the word being typed (set with [textBefore]): a word typed or touched inside a sentence. */
+        @Volatile
+        @JvmStatic
+        var textAfter: String = ""
+
+        /** A word touched by the cursor and the words its SuggestionSpans held (InputLogic.restartSuggestions). */
+        @Volatile
+        private var resumed: Pair<String, List<String>>? = null
+
+        @JvmStatic
+        fun setResumed(word: String, spanWords: List<String>) {
+            resumed = word to spanWords
+        }
+
+        private const val SENTENCE_ENDS = ".!?\n"
 
         /** Marks the ghost in the strip (SuggestionStripLayoutHelper greys its completed part). */
         @JvmField

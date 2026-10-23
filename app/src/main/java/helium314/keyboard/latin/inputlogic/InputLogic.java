@@ -88,6 +88,12 @@ public final class InputLogic {
     private static final int[] EMPTY_CODE_POINTS = new int[0];
     // the connection's cache holds this much: more would ask the app on every keystroke
     private static final int VARNELE_CONTEXT_CHARS = Constants.EDITOR_CONTENTS_CACHE_SIZE;
+    // the rest of a sentence after the cursor, for Varnelė
+    private static final int VARNELE_AFTER_CHARS = 200;
+    // The text after the cursor: the connection doesn't cache it and the app is asked each time (once
+    // over a second on a busy emulator), but typing at the cursor leaves it as it is. Null: ask again
+    // (the cursor moved, the app changed the text, a new field).
+    private volatile String mVarneleTextAfter = null;
 
     // TODO : Remove this member when we can.
     final LatinIME mLatinIME;
@@ -161,6 +167,7 @@ public final class InputLogic {
      */
     public void startInput(String combiningSpec, SettingsValues settingsValues) {
         mConnection.onStartInput();
+        mVarneleTextAfter = null;
         if (!mWordComposer.getTypedWord().isEmpty()) {
             // For messaging apps that offer send button, the IME does not get the opportunity
             // to capture the last word. This block should capture those uncommitted words.
@@ -405,6 +412,7 @@ public final class InputLogic {
             // note that arrow keys are not considered, because for them isBelatedExpectedUpdate returns false
             return expectCursorMove;
         }
+        mVarneleTextAfter = null;
 
         // if all text is gone, we treat it like onStartInput
         if (GestureDataGatheringKt.useBackgroundGathering && newSelStart == 0 && newSelEnd == 0 && !mConnection.hasTextAfterCursor())
@@ -1886,7 +1894,15 @@ public final class InputLogic {
         mWordComposer.setCursorPositionWithinWord(typedWordString.codePointCount(0, numberOfCharsInWordBeforeCursor));
         mConnection.setComposingRegion(expectedCursorPosition - numberOfCharsInWordBeforeCursor,
                 expectedCursorPosition + range.getNumberOfCharsInWordAfterCursor());
-        if (suggestions.size() <= 1) {
+        // Varnelė checks the word in its whole sentence ("kad žiema žymiai rimtesne negu" -> "rimtesnė"),
+        // which the spans (made when the word was committed) can't know; their words come after its own
+        final boolean varnele = VarneleDictionary.Companion.isAvailable(getDictionaryFacilitatorLocale());
+        if (varnele) {
+            final ArrayList<String> spanWords = new ArrayList<>();
+            for (int j = 1; j < suggestions.size(); j++) spanWords.add(suggestions.get(j).mWord);
+            VarneleDictionary.setResumed(typedWordString, spanWords);
+        }
+        if (suggestions.size() <= 1 || varnele) {
             // If there weren't any suggestion spans on this word, suggestions#size() will be 1
             // if shouldIncludeResumedWordInSuggestions is true, 0 otherwise. In this case, we
             // have no useful suggestions, so we will try to compute some for it instead.
@@ -2528,15 +2544,32 @@ public final class InputLogic {
         return true;
     }
 
-    /** The text before the word being typed, up to a paragraph, for Varnelė's predictions. */
-    private String varneleTextBefore() {
-        final CharSequence before = mConnection.getTextBeforeCursor(VARNELE_CONTEXT_CHARS, 0);
-        if (before == null) return "";
-        String text = before.toString();
-        final String typed = mWordComposer.getTypedWord();
-        if (mWordComposer.isComposingWord() && text.endsWith(typed))
-            text = text.substring(0, text.length() - typed.length());
-        return text;
+    /**
+     * The text around the word being typed, for Varnelė: before it up to a paragraph (predictions),
+     * after it a little (a word typed or touched inside a sentence: the words after it can decide its
+     * case). The cursor may be inside the word (a word touched by the cursor).
+     */
+    private void setVarneleContext() {
+        final CharSequence b = mConnection.getTextBeforeCursor(VARNELE_CONTEXT_CHARS, 0);
+        String after = mVarneleTextAfter;
+        if (after == null) {
+            final CharSequence a = mConnection.getTextAfterCursor(VARNELE_AFTER_CHARS, 0);
+            after = a == null ? "" : a.toString();
+            mVarneleTextAfter = after;
+        }
+        String before = b == null ? "" : b.toString();
+        if (mWordComposer.isComposingWord()) {
+            final String typed = mWordComposer.getTypedWord();
+            for (int k = typed.length(); k >= 0; k--) {
+                if (before.endsWith(typed.substring(0, k)) && after.startsWith(typed.substring(k))) {
+                    before = before.substring(0, before.length() - k);
+                    after = after.substring(typed.length() - k);
+                    break;
+                }
+            }
+        }
+        VarneleDictionary.setTextBefore(before);
+        VarneleDictionary.setTextAfter(after);
     }
 
     // we used to provide keyboard, settingsValues and keyboardShiftMode, but every time read it from current instance anyway
@@ -2555,7 +2588,7 @@ public final class InputLogic {
         mWordComposer.adviseCapitalizedModeBeforeFetchingSuggestions(
                 getActualCapsMode(settingsValues, KeyboardSwitcher.getInstance().getKeyboardCapsMode()));
         if (VarneleDictionary.Companion.isAvailable(getDictionaryFacilitatorLocale()))
-            VarneleDictionary.setTextBefore(varneleTextBefore());
+            setVarneleContext();
         try {
             SuggestedWords suggestedWords = mSuggest.getSuggestedWords(mWordComposer.copy(),
                     getNgramContextFromNthPreviousWordForSuggestion(

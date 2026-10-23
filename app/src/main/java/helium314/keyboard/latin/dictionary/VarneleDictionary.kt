@@ -374,7 +374,11 @@ class VarneleDictionary(
         fun markMisspelled(context: Context, text: CharSequence, locale: Locale): CharSequence {
             val word = text.toString()
             if (word.length < 2 || !word.all { it.isLetter() || it == '-' }) return text
-            val r = Native.check(word) ?: return text
+            // the words before it in the sentence: with none, a capital may be the keyboard's own
+            // (Ziwma -> Žiema), but a capitalised foreign word inside a sentence is a name (Wiley)
+            val before = textBefore.substring(textBefore.indexOfLast { it in SENTENCE_ENDS } + 1)
+            val previous = before.split(Regex("[^\\p{L}]+")).filter { it.isNotEmpty() }.takeLast(3).joinToString(" ")
+            val r = Native.check(word, previous) ?: return text
             if (r.isValid) return text
             val suggestions = r.suggestions.take(SuggestionSpan.SUGGESTIONS_MAX_SIZE).map { it.word }.toTypedArray()
             // FLAG_MISSPELLED alone: text fields drop a span that also has FLAG_EASY_CORRECT

@@ -20,6 +20,11 @@ import java.util.Locale
  * the rest of its phrase ("viena nukritusią sagutė" -> "nukritusi"); anything else stays a
  * suggestion. Commas and earlier words each have a setting; the word just finished is always
  * fixed (it is autocorrect's job too).
+ *
+ * Diacritics the keyboard gave a word itself (autocorrect chose žiemą for "ziema", the more frequent
+ * twin) are not trusted like typed ones: once later words are typed, Varnelė checks the sentence with
+ * that word as it was typed and may give it other diacritics ("kad žiemą žymiai rimtesne" -> "žiema
+ * žymiai rimtesnė"). A word whose autocorrection was undone with backspace is left as it is.
  */
 object VarneleSentenceFixer {
     private const val TAG = "Varnele"
@@ -27,8 +32,44 @@ object VarneleSentenceFixer {
     /** rules whose fixes of earlier words may change letters, not only diacritics */
     private val LETTER_RULES = setOf("phrase")
     private const val MAX_CONTEXT = 400
+    /** the last words of the sentence whose autocorrected diacritics may change (as eval/keyboard_sim.py) */
+    private const val SOFT_WINDOW = 6
+    private val WORD = Regex("\\p{L}+")
+
+    /** Words of the current sentence the keyboard gave diacritics: their index among its words -> the form typed. */
+    private val soft = HashMap<Int, String>()
+    /** where that sentence starts in the field */
+    private var softSentence = -1
 
     fun isActive(locale: Locale) = locale.language == "lt" && Native.available
+
+    /** Autocorrect committed [committed] for [typed]: remember it if only diacritics differ. */
+    fun rememberAutocorrection(connection: RichInputConnection, typed: String, committed: String) {
+        if (typed == committed || typed.length != committed.length || fold(typed) != fold(committed)) return
+        val before = connection.getTextBeforeCursor(MAX_CONTEXT, 0)?.toString() ?: return
+        val start = sentenceStart(before)
+        val at = connection.expectedSelectionStart - before.length + start
+        if (at != softSentence) {
+            soft.clear()
+            softSentence = at
+        }
+        val words = WORD.findAll(before.substring(start)).count()
+        if (words > 0) soft[words - 1] = typed
+    }
+
+    /** The last autocorrection was undone (backspace): its word stays as typed. */
+    fun forgetLastAutocorrection() {
+        soft.keys.maxOrNull()?.let { soft.remove(it) }
+    }
+
+    /** Where the sentence before the cursor starts: after the last sentence end (not counting the last character). */
+    private fun sentenceStart(before: String): Int {
+        for (i in before.length - 2 downTo 0) {
+            val c = before[i]
+            if (c == '.' || c == '!' || c == '?' || c == '\n') return i + 1
+        }
+        return 0
+    }
 
     /**
      * @param picked the last word was picked from the suggestion strip: the user chose it,
@@ -40,16 +81,14 @@ object VarneleSentenceFixer {
         val before = connection.getTextBeforeCursor(MAX_CONTEXT, 0)?.toString() ?: return false
         if (connection.expectedSelectionStart != connection.expectedSelectionEnd) return false
         // the current sentence: everything after the last sentence end
-        var start = 0
-        for (i in before.length - 2 downTo 0) {
-            val c = before[i]
-            if (c == '.' || c == '!' || c == '?' || c == '\n') {
-                start = i + 1
-                break
-            }
-        }
+        val start = sentenceStart(before)
         val sentence = before.substring(start)
         if (sentence.isBlank()) return false
+        val at = connection.expectedSelectionStart - before.length + start
+        if (at != softSentence) {
+            soft.clear()
+            softSentence = at
+        }
 
         // the word this separator finished, in case the keyboard committed it as typed
         // (punctuation, or a learned word that outranked the fix): "nauja sakini?" -> "sakinį"
@@ -58,7 +97,13 @@ object VarneleSentenceFixer {
         var lastWordStart = end
         while (lastWordStart > 0 && sentence[lastWordStart - 1].isLetter()) lastWordStart--
         var fixed = if (picked) sentence else fixLastWord(sentence)
+        if (fixed != sentence) {
+            val words = WORD.findAll(fixed).toList()
+            val last = words.lastOrNull()
+            if (last != null) rememberWord(words.size - 1, sentence.substring(last.range), last.value)
+        }
         val settings = Settings.getValues()
+        if (settings.mVarneleFixEarlier) fixed = fixSoft(fixed)
         // a second pass catches what the first fix reveals: "kuriu" -> "kurių" then needs a comma
         repeat(2) {
             val sb = StringBuilder(fixed)
@@ -96,6 +141,36 @@ object VarneleSentenceFixer {
         connection.commitText(fixed.substring(p), 1)
         connection.endBatchEdit()
         return true
+    }
+
+    private fun rememberWord(index: Int, typed: String, committed: String) {
+        if (typed != committed && typed.length == committed.length && fold(typed) == fold(committed)) soft[index] = typed
+    }
+
+    /**
+     * The words the keyboard gave diacritics, among the last [SOFT_WINDOW] (not the word just
+     * finished: nothing follows it yet), checked as typed: Varnelė may give them other diacritics.
+     * A word that no longer looks like the one typed (edited) is forgotten.
+     */
+    private fun fixSoft(sentence: String): String {
+        if (soft.isEmpty()) return sentence
+        val words = WORD.findAll(sentence).toList()
+        val typed = StringBuilder(sentence)
+        for ((k, t) in soft.entries.toList()) {
+            val w = words.getOrNull(k)
+            if (w == null || w.value.length != t.length || fold(w.value) != fold(t)) {
+                soft.remove(k)
+                continue
+            }
+            if (k >= words.size - SOFT_WINDOW && k < words.size - 1) typed.replace(w.range.first, w.range.last + 1, t)
+        }
+        if (typed.toString() == sentence) return sentence
+        val sb = StringBuilder(sentence)
+        for ((a, b, w) in Native.soft(sentence, typed.toString()).sortedByDescending { it.first }) {
+            if (b <= sb.length && b - a == w.length) sb.replace(a, b, w)
+        }
+        if (BuildConfig.DEBUG && sb.toString() != sentence) Log.d(TAG, "soft fix: '$sentence' -> '$sb'")
+        return sb.toString()
     }
 
     private fun fixLastWord(sentence: String): String {

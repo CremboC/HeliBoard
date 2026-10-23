@@ -106,6 +106,21 @@ object Native {
     fun ghost(context: String, typed: String): String? =
         if (!available) null else ghostNative(context, typed, formal).ifEmpty { null }
 
+    @JvmStatic
+    private external fun softNative(committed: String, typed: String): String
+
+    /**
+     * The keyboard's own diacritics decided again once later words are typed: [committed] is the
+     * sentence as it stands, [typed] the same with the words the keyboard gave diacritics as they
+     * were typed ("kad žiemą žymiai rimtesne" / "kad ziema …"). Returns (start, end, word) to put in
+     * their place ("žiema"), UTF-16 offsets.
+     */
+    fun soft(committed: String, typed: String): List<Triple<Int, Int, String>> {
+        if (!available) return emptyList()
+        val a = JSONArray(softNative(committed, typed))
+        return (0 until a.length()).map { a.getJSONObject(it).let { o -> Triple(o.getInt("start"), o.getInt("end"), o.getString("word")) } }
+    }
+
     @JvmStatic private external fun userLoadNative(path: String)
     @JvmStatic private external fun userEnabledNative(on: Boolean)
     @JvmStatic private external fun userObserveNative(text: String, cut: Boolean)

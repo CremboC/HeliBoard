@@ -1944,6 +1944,7 @@ public final class InputLogic {
             }
         }
         mConnection.deleteTextBeforeCursor(deleteLength);
+        VarneleSentenceFixer.INSTANCE.forgetLastAutocorrection(); // Varnelė: the user wants it as typed
         if (!TextUtils.isEmpty(committedWord)) {
             unlearnWord(committedWordString, inputTransaction.getSettingsValues(), DictionaryFacilitator.UnlearnEvent.REVERT);
         }
@@ -2379,6 +2380,11 @@ public final class InputLogic {
         if (stringToCommit != null) {
             final boolean isBatchMode = mWordComposer.isBatchMode();
             commitChosenWord(settingsValues, stringToCommit, LastComposedWord.COMMIT_TYPE_DECIDED_WORD, separator);
+            if (!typedWord.equals(stringToCommit)
+                    && VarneleSentenceFixer.INSTANCE.isActive(mDictionaryFacilitator.getCurrentLocale())) {
+                // Varnelė: diacritics the keyboard chose may change once later words are typed
+                VarneleSentenceFixer.INSTANCE.rememberAutocorrection(mConnection, typedWord, stringToCommit);
+            }
             if (!typedWord.equals(stringToCommit)) {
                 // This will make the correction flash for a short while as a visual clue
                 // to the user that auto-correction happened. It has no other effect; in particular

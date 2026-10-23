@@ -23,7 +23,7 @@ import java.util.Locale
  */
 object VarneleSentenceFixer {
     private const val TAG = "Varnele"
-    private val SAFE_RULES = setOf("case", "agreement", "quantity", "negation", "relative", "object", "subject", "phrase")
+    private val SAFE_RULES = setOf("case", "agreement", "quantity", "negation", "relative", "object", "subject", "phrase", "valency")
     /** rules whose fixes of earlier words may change letters, not only diacritics */
     private val LETTER_RULES = setOf("phrase")
     private const val MAX_CONTEXT = 400
